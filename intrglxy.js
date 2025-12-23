@@ -16,7 +16,10 @@ const client = new Client({
 const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
 
-const token = process.env;
+const token = process.env.DISCORD_TOKEN;
+const channelID = process.env.channelID;
+const guildID = process.env.guildID;
+const clientID = process.env.clientID;
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
