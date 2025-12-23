@@ -1,7 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const { Client, GatewayIntentBits, EmbedBuilder, Collection } = require('discord.js');
-
+const { REST, Routes } = require('discord.js');
 
 // ================= CLIENT =================
 const client = new Client({
