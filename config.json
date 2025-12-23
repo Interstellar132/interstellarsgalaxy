@@ -1,5 +1,0 @@
-{
-  "token": process.env.DISCORD_TROKEN,
-  "clientId": process.env.clientID,
-  "guildId": process.env.guildID
-}
