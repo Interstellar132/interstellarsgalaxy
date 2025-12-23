@@ -16,6 +16,7 @@ const client = new Client({
 const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
 
+const token = process.env;
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
