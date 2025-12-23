@@ -1,0 +1,11 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "main": "intrglxy.js",
+  "scripts": {
+    "start": "node intrglxy.js"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
