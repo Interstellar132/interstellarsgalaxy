@@ -224,10 +224,6 @@ client.once('clientReady', () => {
   setInterval(checkForNewLevel, checkInterval);
 });
 
-
-//require('dotenv').config();
-const token = process.env.DISCORD_TOKEN;
-
 if (!token) {
   console.error("DISCORD_TOKEN is not set!");
   process.exit(1);
