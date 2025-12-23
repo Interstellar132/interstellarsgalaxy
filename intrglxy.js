@@ -17,8 +17,8 @@ const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
 
 const token = process.env.DISCORD_TOKEN;
-const channelID = process.env.channelID;
-const guildID = process.env.guildID;
+const channelId = process.env.channelID;
+const guildId = process.env.guildID;
 const clientId = process.env.clientID;
 
 const commands = [];
