@@ -1,6 +1,6 @@
 const fs = require('fs');
 const https = require('https');
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, Collection } = require('discord.js');
 
 
 // ================= CLIENT =================
@@ -15,6 +15,38 @@ const client = new Client({
 // ================= CONFIG =================
 const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
+
+// Create a collection for commands
+client.commands = new Collection();
+
+// Load commands from the commands folder
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.data.name, command);
+}
+
+
+// Interaction handler
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+
+  if (!command) {
+    console.log(`No command matching ${interaction.commandName} was found.`);
+    return;
+  }
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    if (!interaction.replied) {
+      await interaction.reply({ content: 'There was an error!', ephemeral: true });
+    }
+  }
+});
 
 // channel & server stuff
 const newlvlschnl = ('1443065773034836068');
