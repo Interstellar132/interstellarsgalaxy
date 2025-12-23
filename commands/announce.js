@@ -3,7 +3,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('announce')
-    .setDescription('Send an announcement to the pre-defined channel')
+    .setDescription('Make an announcement')
     .addStringOption(option =>
       option.setName('message')
         .setDescription('The announcement message')
