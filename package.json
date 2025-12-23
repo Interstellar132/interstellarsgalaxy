@@ -5,6 +5,10 @@
   "scripts": {
     "start": "node intrglxy.js"
   },
+  "dependencies": {
+  "discord.js": "^14.0.0"
+}
+
   "engines": {
     "node": "20.x"
   }
