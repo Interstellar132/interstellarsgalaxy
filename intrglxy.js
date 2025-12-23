@@ -16,7 +16,6 @@ const client = new Client({
 const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
 
-const { clientId, guildId, token } = require('./config.json');
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
