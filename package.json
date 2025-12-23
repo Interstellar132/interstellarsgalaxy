@@ -4,7 +4,7 @@
   "description": "Discord bot",
   "main": "intrglxy.js",
   "scripts": {
-    "start": node deploy-commands.js
+    "start": "node deploy-commands.js"
     "start": "node intrglxy.js"
   },
   "dependencies": {
