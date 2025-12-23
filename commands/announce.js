@@ -16,7 +16,7 @@ module.exports = {
     const message = interaction.options.getString('message');
 
     // Replace this with your fixed announcement channel ID
-    const channelId = '673378001324605484';
+    const channelId = process.env.channelID;
     const channel = interaction.guild.channels.cache.get(channelId);
 
     if (!channel || !channel.isTextBased()) {
