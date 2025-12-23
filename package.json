@@ -1,14 +1,14 @@
 {
-  "name": "discord-bot",
+  "name": "intrglxy-bot",
   "version": "1.0.0",
+  "description": "Discord bot",
   "main": "intrglxy.js",
   "scripts": {
     "start": "node intrglxy.js"
   },
   "dependencies": {
-  "discord.js": "^14.0.0"
-}
-
+    "discord.js": "^14.14.1"
+  },
   "engines": {
     "node": "20.x"
   }
