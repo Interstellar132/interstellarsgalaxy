@@ -1,0 +1,5 @@
+{
+  "token": process.env.DISCORD_TROKEN,
+  "clientId": "838297485511491586",
+  "guildId": "772954084919607337"
+}
