@@ -45,7 +45,6 @@ const rest = new REST({ version: '10' }).setToken(token);
 client.commands = new Collection();
 
 // Load commands from the commands folder
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.data.name, command);
