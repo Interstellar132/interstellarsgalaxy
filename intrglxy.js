@@ -209,7 +209,7 @@ async function checkForNewLevel() {
 
     if (level.lvlid > stored) {
       const channel = await client.channels.fetch(newlvlschnl);
-      await channel.send('New Interstellar Level! ' + lvlsping)
+      await channel.send(lvlsping + ' New Interstellar Level!')
       await channel.send({ embeds: [buildEmbed(level)] });
       saveLvlId(level.lvlid);
       console.log(`🆕 New level: ${level.lvlid}`);
