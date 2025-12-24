@@ -14,8 +14,8 @@ module.exports = {
   async execute(interaction) {
     const message = interaction.options.getString('message');
 
-    const CHANNEL_ID = process.env.CHANNEL_ID;
-    const OWNER_ID = process.env.OWNER_ID;
+    const CHANNEL_ID = process.env.ChannelId;
+    const OWNER_ID = process.env.OwnerId;
 
     const channel = interaction.guild.channels.cache.get(CHANNEL_ID);
 
