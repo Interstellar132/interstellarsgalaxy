@@ -230,7 +230,7 @@ client.user.setPresence({
     activities: [
       {
         name: 'Over the Galaxy 🚀',
-        type: ActivityType.Playing
+        type: ActivityType.Watching
       }
     ]
   })
