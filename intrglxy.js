@@ -1,6 +1,6 @@
 const fs = require('fs');
 const https = require('https');
-const { Client, GatewayIntentBits, EmbedBuilder, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, Collection, ActivityType } = require('discord.js');
 const { REST, Routes } = require('discord.js');
 
 // ================= CLIENT =================
@@ -223,6 +223,17 @@ async function checkForNewLevel() {
 // ================= READY =================
 client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
+
+client.user.setPresence({
+    status: 'online',
+    activities: [
+      {
+        name: 'Over the Galaxy 🚀',
+        type: ActivityType.Playing
+      }
+    ]
+  })
+  
   checkForNewLevel();
   setInterval(checkForNewLevel, checkInterval);
 });
