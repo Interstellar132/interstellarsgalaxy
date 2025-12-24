@@ -20,6 +20,7 @@ const token = process.env.DISCORD_TOKEN;
 const channelId = process.env.channelID;
 const guildId = process.env.guildID;
 const clientId = process.env.clientID;
+const OwnerId = process.env.OwnerID;
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
