@@ -260,7 +260,7 @@ client.on('guildMemberAdd', async member => {
   if (recentJoins.length >= JOIN_THRESHOLD) {
     await dmOwner(
       member.client,
-      `🚨 **RAID DETECTED**
+      `🚨 A RAID IS HAPPENING!!
 Server: ${member.guild.name}
 Joins: ${recentJoins.length} in ${JOIN_WINDOW_SECONDS}s
 Auto-banning suspicious accounts...`
@@ -309,7 +309,7 @@ Account Age: ${ageDays} day(s)`
   if (ageDays < MIN_ACCOUNT_AGE_DAYS) {
     await dmOwner(
       member.client,
-      `⚠️ **New Account Alert**
+      `⚠️ Heads up! This user has a new account!
 User: ${member.user.tag}
 Server: ${member.guild.name}
 Account Age: ${ageDays} day(s)`
