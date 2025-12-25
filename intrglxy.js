@@ -30,6 +30,16 @@ const JOIN_THRESHOLD = 5;
 const recentJoins = [];
 
 
+async function dmOwner(client, message) {
+  try {
+    const owner = await client.users.fetch(process.env.OWNER_ID);
+    await owner.send(message);
+  } catch (err) {
+    console.error('Failed to DM owner:', err);
+  }
+}
+
+
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
