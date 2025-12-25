@@ -300,7 +300,7 @@ Account Age: ${ageDays} day(s)`
 
   // ===== Normal traffic log =====
   await channel.send(
-    `<@${member.id}> left Earth and joined us in space! Welcome Aboard!` + WelcomeImage
+    `<@${member.id}> left Earth and joined us in space! Welcome Aboard!`
   );
 
   // ===== New account warning (DM only) =====
