@@ -32,7 +32,7 @@ const recentJoins = [];
 
 async function dmOwner(client, message) {
   try {
-    const owner = await client.users.fetch(process.env.OWNER_ID);
+    const owner = await client.users.fetch(process.env.OwnerID);
     await owner.send(message);
   } catch (err) {
     console.error('Failed to DM owner:', err);
