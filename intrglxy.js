@@ -23,7 +23,7 @@ const guildId = process.env.guildID;
 const clientId = process.env.clientID;
 const OwnerId = process.env.OwnerID;
 const trafficId = process.env.TrafficID;
-const MinimumAgeDays = 14;
+const MIN_ACCOUNT_AGE_DAYS = 14;
 const JOIN_WINDOW_SECONDS = 30;
 const JOIN_THRESHOLD = 5;
 
