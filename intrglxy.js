@@ -239,6 +239,85 @@ async function checkForNewLevel() {
   }
 }
 
+client.on('guildMemberAdd', async member => {
+  const trafficId = process.env.TrafficID;
+  const channel = member.guild.channels.cache.get(trafficId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const now = Date.now();
+
+  // ===== Store join =====
+  recentJoins.push({ time: now, member });
+
+  const windowMs = JOIN_WINDOW_SECONDS * 1000;
+
+  // Remove old joins
+  while (recentJoins.length && recentJoins[0].time < now - windowMs) {
+    recentJoins.shift();
+  }
+
+  // ===== Check raid =====
+  if (recentJoins.length >= JOIN_THRESHOLD) {
+    await dmOwner(
+      member.client,
+      `🚨 **RAID DETECTED**
+Server: ${member.guild.name}
+Joins: ${recentJoins.length} in ${JOIN_WINDOW_SECONDS}s
+Auto-banning suspicious accounts...`
+    );
+
+    for (const entry of recentJoins) {
+      const m = entry.member;
+
+      // Skip if already gone
+      if (!m || !m.bannable) continue;
+
+      const ageMs = now - m.user.createdAt.getTime();
+      const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+      if (ageDays <= RAID_BAN_ACCOUNT_AGE_DAYS) {
+        try {
+          await m.ban({
+            reason: 'Raid detected – new account'
+          });
+
+          await dmOwner(
+            member.client,
+            `🔨 **User Banned**
+${m.user.tag} (${m.user.id})
+Account Age: ${ageDays} day(s)`
+          );
+        } catch (err) {
+          console.error(`Failed to ban ${m.user.tag}`, err);
+        }
+      }
+    }
+
+    // Reset to avoid repeated bans
+    recentJoins.length = 0;
+  }
+
+  // ===== Normal traffic log =====
+  await channel.send(
+    `👋 **${member.user.tag}** left Earth and Joined us in space! Welcome Aboard!`
+  );
+
+  // ===== New account warning (DM only) =====
+  const ageMs = now - member.user.createdAt.getTime();
+  const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+  if (ageDays < MIN_ACCOUNT_AGE_DAYS) {
+    await dmOwner(
+      member.client,
+      `⚠️ **New Account Alert**
+User: ${member.user.tag}
+Server: ${member.guild.name}
+Account Age: ${ageDays} day(s)`
+    );
+  }
+});
+
+
 // ================= READY =================
 client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
