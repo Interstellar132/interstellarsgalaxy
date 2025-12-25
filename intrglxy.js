@@ -18,7 +18,6 @@ const saveFile = './lastLevel.json';
 const checkInterval = 60 * 1000;
 
 const token = process.env.DISCORD_TOKEN;
-const channelId = process.env.channelID;
 const guildId = process.env.guildID;
 const clientId = process.env.clientID;
 const OwnerId = process.env.OwnerID;
@@ -98,7 +97,6 @@ client.on('interactionCreate', async interaction => {
 // channel & server stuff
 const newlvlschnl = ('1443065773034836068');
 const lvlsping = (`<@&1443069487417917512>`);
-const announcechnl = ('673378001324605484');
 const liveping = (`<@&894609836434653214>`);
 const uploadping = (`<@&1114778023951081584>`);
 const twitchchnl = ("https://twitch.tv/interstellar_ca");
