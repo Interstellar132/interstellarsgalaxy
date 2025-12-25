@@ -24,6 +24,9 @@ const clientId = process.env.clientID;
 const OwnerId = process.env.OwnerID;
 const trafficId = process.env.TrafficID;
 const MinimumAgeDays = 14;
+const JOIN_WINDOW_SECONDS = 30;
+const JOIN_THRESHOLD = 5;
+
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
