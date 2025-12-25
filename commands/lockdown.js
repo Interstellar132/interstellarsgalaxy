@@ -1,32 +1,38 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-// In-memory store for original permissions
-// Maps: guildId => { channelId => originalOverwrite }
+// In-memory backup: guildId => { channelId => originalOverwrites }
 const guildPermissionsBackup = new Map();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lockdown')
-    .setDescription('Lock all channels in the server (disable sending messages)')
+    .setDescription('Lock all channels for everyone')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     const guild = interaction.guild;
+    const executor = interaction.user;
 
-    // Store original permissions
     const backup = {};
 
     for (const [id, channel] of guild.channels.cache) {
-      if (!channel.isTextBased()) continue;
+      // Only channels the bot can manage
+      if (!channel.manageable) continue;
 
-      // Save current permission overwrite for @everyone
-      const everyoneOverwrite = channel.permissionOverwrites.cache.get(guild.id);
-      backup[id] = everyoneOverwrite ? everyoneOverwrite.allow.bitfield : null;
+      // Save ALL current permission overwrites
+      const overwrites = {};
+      channel.permissionOverwrites.cache.forEach(ow => {
+        overwrites[ow.id] = {
+          allow: ow.allow.bitfield,
+          deny: ow.deny.bitfield,
+          type: ow.type
+        };
+      });
+      backup[id] = overwrites;
 
+      // Lock @everyone
       try {
-        await channel.permissionOverwrites.edit(guild.id, {
-          SendMessages: false
-        });
+        await channel.permissionOverwrites.edit(guild.id, { SendMessages: false, Speak: false });
       } catch (err) {
         console.error(`Failed to lock channel ${channel.name}:`, err);
       }
@@ -34,9 +40,8 @@ module.exports = {
 
     guildPermissionsBackup.set(guild.id, backup);
 
-    await interaction.reply('🔒 Server has been locked down. All text channels are now read-only.');
+    await interaction.reply(`🔒 Server locked down by ${executor.tag}. All channels are read-only.`);
   },
 
-  guildPermissionsBackup, // export for unlock command
+  guildPermissionsBackup
 };
-
