@@ -317,6 +317,17 @@ Account Age: ${ageDays} day(s)`
   }
 });
 
+client.on('guildMemberRemove', async member => {
+  const trafficId = process.env.TrafficID;
+  const channel = member.guild.channels.cache.get(trafficId);
+  if (!channel || !channel.isTextBased()) return;
+
+  channel.send(
+    `👋 **${member.user.tag}** left the server`
+  );
+});
+
+
 
 // ================= READY =================
 client.once('clientReady', () => {
