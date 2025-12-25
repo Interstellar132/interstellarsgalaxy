@@ -28,7 +28,7 @@ module.exports = {
 
     if (!member) {
       return interaction.reply({
-        content: '❌ User not found in this server.',
+        content: 'I did not find this user.',
         ephemeral: true
       });
     }
@@ -44,12 +44,13 @@ module.exports = {
       await member.ban({ reason });
 
       await interaction.reply({
-        content: `🔨 **${target.tag}** has been banned.\nReason: ${reason}`
+        content: `🔨 **${target.tag}** has been banned.\nReason: ${reason}`,
+        ephemeral: true
       });
 
       // OPTIONAL: DM owner
       try {
-        const owner = await interaction.client.users.fetch(process.env.OWNER_ID);
+        const owner = await interaction.client.users.fetch(process.env.OwnerID);
         await owner.send(
           `🔨 **Ban Command Used**
 User: ${target.tag} (${target.id})
