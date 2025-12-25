@@ -323,7 +323,7 @@ client.on('guildMemberRemove', async member => {
   if (!channel || !channel.isTextBased()) return;
 
   channel.send(
-    `👋 **${member.user.tag}** left the server`
+    `👋 **${member.user.tag}** retired from an Astronaut and went back to Earth.`
   );
 });
 
