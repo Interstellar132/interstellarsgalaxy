@@ -299,7 +299,7 @@ Account Age: ${ageDays} day(s)`
 
   // ===== Normal traffic log =====
   await channel.send(
-    `<@${member.id}> left Earth and Joined us in space! Welcome Aboard!`
+    `<@${member.id}> left Earth and joined us in space! Welcome Aboard!` + 'https://i.ibb.co/dJGPRJ1m/astronaut-on-spacewalk-taking-selfie-in-front-of-earth.webp'
   );
 
   // ===== New account warning (DM only) =====
