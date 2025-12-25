@@ -299,7 +299,7 @@ Account Age: ${ageDays} day(s)`
 
   // ===== Normal traffic log =====
   await channel.send(
-    `👋 **${member.user.tag}** left Earth and Joined us in space! Welcome Aboard!`
+    `<@${member.id}> left Earth and Joined us in space! Welcome Aboard!`
   );
 
   // ===== New account warning (DM only) =====
@@ -323,7 +323,7 @@ client.on('guildMemberRemove', async member => {
   if (!channel || !channel.isTextBased()) return;
 
   channel.send(
-    `👋 **${member.user.tag}** retired from an Astronaut and went back to Earth.`
+    `**${member.user.tag}** retired from an Astronaut and went back to Earth.`
   );
 });
 
