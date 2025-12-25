@@ -26,6 +26,7 @@ const trafficId = process.env.TrafficID;
 const MIN_ACCOUNT_AGE_DAYS = 14;
 const JOIN_WINDOW_SECONDS = 30;
 const JOIN_THRESHOLD = 5;
+const WelcomeImage = process.env.WelcomeImage;
 
 const recentJoins = [];
 
@@ -299,7 +300,7 @@ Account Age: ${ageDays} day(s)`
 
   // ===== Normal traffic log =====
   await channel.send(
-    `<@${member.id}> left Earth and joined us in space! Welcome Aboard!` + 'https://i.ibb.co/dJGPRJ1m/astronaut-on-spacewalk-taking-selfie-in-front-of-earth.webp'
+    `<@${member.id}> left Earth and joined us in space! Welcome Aboard!` + WelcomeImage
   );
 
   // ===== New account warning (DM only) =====
