@@ -6,7 +6,7 @@ const guildPermissionsBackup = new Map();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lockdown')
-    .setDescription('Lock all channels for everyone')
+    .setDescription('Lock all channels for everyone, ONLY use as a fail-safe')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
