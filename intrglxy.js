@@ -287,7 +287,7 @@ client.on('roleUpdate', async (oldRole, newRole) => {
   }
 
   // Permissions
-  const permDiff = diffPermissions(oldRole.permissions, newRole.permissions);
+  const permDiff = diffRole(oldRole.permissions, newRole.permissions);
   if (permDiff.length) {
     fields.push({ name: 'Permissions Changed', value: permDiff.join('\n') });
   }
