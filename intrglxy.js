@@ -29,6 +29,16 @@ const WelcomeImage = process.env.WelcomeImage;
 
 const recentJoins = [];
 
+async function sendLog(client, message) {
+  try {
+    const channel = await client.channels.fetch(process.env.logID);
+    if (!channel || !channel.isTextBased()) return;
+    await channel.send(message);
+  } catch (err) {
+    console.error('Logging failed:', err);
+  }
+}
+
 
 async function dmOwner(client, message) {
   try {
