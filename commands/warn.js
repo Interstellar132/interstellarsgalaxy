@@ -56,3 +56,14 @@ module.exports = {
   }
 };
 
+const { sendLog } = require('../utils/logger');
+
+await sendLog(interaction.client, {
+  title: '⚠️ Member Warned',
+  color: 0xFEE75C,
+  fields: [
+    { name: 'User', value: target.tag },
+    { name: 'Moderator', value: interaction.user.tag },
+    { name: 'Reason', value: reason }
+  ]
+});
