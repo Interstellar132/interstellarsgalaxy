@@ -209,6 +209,46 @@ client.on('guildMemberRemove', async (member) => {
     console.error('Kick log failed:', err);
   }
 });
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+  if (oldMessage.author.bot) return; // Ignore bot messages
+  if (oldMessage.content === newMessage.content) return; // Ignore embeds/attachments only
+
+  const logChannel = oldMessage.guild.channels.cache.get(process.env.logID);
+  if (!logChannel || !logChannel.isTextBased()) return;
+
+  await sendLog(client, {
+    title: '✏️ Message Edited',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'User', value: oldMessage.author.tag },
+      { name: 'Channel', value: `${oldMessage.channel}` },
+      { name: 'Before', value: oldMessage.content || '[empty]' },
+      { name: 'After', value: newMessage.content || '[empty]' }
+    ],
+    timestamp: new Date()
+  });
+});
+
+client.on('messageDelete', async (message) => {
+  if (message.author.bot) return; // Ignore bot messages
+
+  const logChannel = message.guild.channels.cache.get(process.env.logID);
+  if (!logChannel || !logChannel.isTextBased()) return;
+
+  await sendLog(client, {
+    title: '🗑️ Message Deleted',
+    color: 0xED4245,
+    fields: [
+      { name: 'User', value: message.author.tag },
+      { name: 'Channel', value: `${message.channel}` },
+      { name: 'Content', value: message.content || '[empty]' }
+    ],
+    timestamp: new Date()
+  });
+});
+
+
 async function dmOwner(client, message) {
   try {
     const owner = await client.users.fetch(process.env.OwnerID);
