@@ -260,6 +260,58 @@ client.on('messageDelete', async (message) => {
   }
 });
 
+client.on('roleUpdate', async (oldRole, newRole) => {
+  const logChannel = oldRole.guild.channels.cache.get(process.env.logID);
+  if (!logChannel || !logChannel.isTextBased()) return;
+
+  const fields = [];
+
+  // Name
+  if (oldRole.name !== newRole.name) {
+    fields.push({ name: 'Name Changed', value: `Before: ${oldRole.name}\nAfter: ${newRole.name}` });
+  }
+
+  // Color
+  if (oldRole.color !== newRole.color) {
+    fields.push({ name: 'Color Changed', value: `Before: #${oldRole.color.toString(16).padStart(6, '0')}\nAfter: #${newRole.color.toString(16).padStart(6, '0')}` });
+  }
+
+  // Hoist
+  if (oldRole.hoist !== newRole.hoist) {
+    fields.push({ name: 'Hoist Changed', value: `Before: ${oldRole.hoist}\nAfter: ${newRole.hoist}` });
+  }
+
+  // Mentionable
+  if (oldRole.mentionable !== newRole.mentionable) {
+    fields.push({ name: 'Mentionable Changed', value: `Before: ${oldRole.mentionable}\nAfter: ${newRole.mentionable}` });
+  }
+
+  // Permissions
+  const permDiff = diffPermissions(oldRole.permissions, newRole.permissions);
+  if (permDiff.length) {
+    fields.push({ name: 'Permissions Changed', value: permDiff.join('\n') });
+  }
+
+  if (!fields.length) return; // No relevant changes
+
+  // Fetch executor from audit logs
+  let executor;
+  try {
+    const logs = await newRole.guild.fetchAuditLogs({ type: 32, limit: 1 }); // ROLE_UPDATE
+    executor = logs.entries.first()?.executor;
+  } catch {}
+
+  await sendLog(client, {
+    title: '🛠️ Role Updated',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'Role', value: `${newRole.name} (${newRole.id})` },
+      { name: 'Moderator', value: executor?.tag || 'Unknown' },
+      ...fields
+    ],
+    timestamp: new Date()
+  });
+});
 
 async function dmOwner(client, message) {
   try {
