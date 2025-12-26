@@ -30,6 +30,8 @@ const JOIN_WINDOW_SECONDS = 30;
 const JOIN_THRESHOLD = 5;
 const WelcomeImage = process.env.WelcomeImage;
 const { wordBlacklist, warnings } = require('./utils/automod');
+const WARN_THRESHOLD = 3;      // warnings before timeout
+const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
 
 const recentJoins = [];
 
