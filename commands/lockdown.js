@@ -1,47 +1,63 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 
-// In-memory backup: guildId => { channelId => originalOverwrites }
-const guildPermissionsBackup = new Map();
+const BACKUP_FILE = path.join(__dirname, '..', 'lockdown-backup.json');
+
+function loadBackup() {
+  if (!fs.existsSync(BACKUP_FILE)) return {};
+  return JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf8'));
+}
+
+function saveBackup(data) {
+  fs.writeFileSync(BACKUP_FILE, JSON.stringify(data, null, 2));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lockdown')
-    .setDescription('Lock all channels for everyone, ONLY use as a fail-safe')
+    .setDescription('Lock the entire server (persistent)')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     const guild = interaction.guild;
     const executor = interaction.user;
 
-    const backup = {};
+    const backup = loadBackup();
+
+    if (backup[guild.id]) {
+      return interaction.reply({
+        content: 'Server is already in lockdown.',
+        ephemeral: true
+      });
+    }
+
+    backup[guild.id] = {};
 
     for (const [id, channel] of guild.channels.cache) {
-      // Only channels the bot can manage
       if (!channel.manageable) continue;
 
-      // Save ALL current permission overwrites
-      const overwrites = {};
-      channel.permissionOverwrites.cache.forEach(ow => {
-        overwrites[ow.id] = {
-          allow: ow.allow.bitfield,
-          deny: ow.deny.bitfield,
-          type: ow.type
-        };
-      });
-      backup[id] = overwrites;
+      backup[guild.id][id] = channel.permissionOverwrites.cache.map(ow => ({
+        id: ow.id,
+        type: ow.type,
+        allow: ow.allow.bitfield.toString(),
+        deny: ow.deny.bitfield.toString()
+      }));
 
-      // Lock @everyone
       try {
-        await channel.permissionOverwrites.edit(guild.id, { SendMessages: false, Speak: false });
+        await channel.permissionOverwrites.edit(guild.id, {
+          SendMessages: false,
+          Speak: false
+        });
       } catch (err) {
-        console.error(`Failed to lock channel ${channel.name}:`, err);
+        console.error(`Lock failed: ${channel.name}`, err);
       }
     }
 
-    guildPermissionsBackup.set(guild.id, backup);
+    saveBackup(backup);
 
-    await interaction.reply(`🔒 Server locked down by ${executor.tag}. All channels are read-only.`);
-  },
-
-  guildPermissionsBackup
+    await interaction.reply(
+      `**SERVER LOCKED DOWN**\nTriggered by **${executor.tag}**`
+    );
+  }
 };
