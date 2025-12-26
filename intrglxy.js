@@ -325,64 +325,103 @@ client.on('roleUpdate', async (oldRole, newRole) => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
 
-  const guildWords = wordBlacklist.get(message.guild.id) || new Set();
+  // 1️⃣ Spam detection
+  const now = Date.now();
+  const timestamps = userSpam.get(message.author.id) || [];
+  timestamps.push(now);
 
-  const foundWord = [...guildWords].find(word => message.content.toLowerCase().includes(word.toLowerCase()));
-  if (!foundWord) return;
+  // Keep only messages in the last SPAM_TIME_WINDOW
+  const recentMessages = timestamps.filter(ts => now - ts < SPAM_TIME_WINDOW);
+  userSpam.set(message.author.id, recentMessages);
 
-  await message.delete().catch(() => {});
+  if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
+    // Increment warning
+    const currentWarns = warnings.get(message.author.id) || 0;
+    warnings.set(message.author.id, currentWarns + 1);
 
-  // Add warning
-  const currentWarns = warnings.get(message.author.id) || 0;
-  warnings.set(message.author.id, currentWarns + 1);
+    // Delete messages in channel if you want
+    // await message.channel.bulkDelete(recentMessages.length).catch(() => {});
 
-  // Notify the user
-  await message.author.send(`You have been warned for using a prohibited word. Please use common sense when chatting.`).catch(() => {});
+    // DM the user
+    await message.author.send(`You were spamming. Please use common sense.`).catch(() => {});
 
-  // Log the warning
-  await sendLog(client, {
-    title: '⚠️ Auto-Warn',
-    color: 0xFEE75C,
-    fields: [
-      { name: 'User', value: message.author.tag },
-      { name: 'Word', value: foundWord },
-      { name: 'Warnings', value: `${currentWarns + 1}` },
-      { name: 'Channel', value: message.channel.name }
-    ],
-    timestamp: new Date()
-  });
+    // Log
+    await sendLog(client, {
+      title: '⚠️ Auto-Warn: Spam',
+      color: 0xFEE75C,
+      fields: [
+        { name: 'User', value: message.author.tag },
+        { name: 'Messages', value: `${recentMessages.length} messages in ${SPAM_TIME_WINDOW / 1000}s` },
+        { name: 'Warnings', value: `${currentWarns + 1}` },
+        { name: 'Channel', value: message.channel.name }
+      ],
+      timestamp: new Date()
+    });
 
-  // Timeout if warnings exceed threshold
-  if (currentWarns + 1 >= WARN_THRESHOLD) {
-    const member = await message.guild.members.fetch(message.author.id).catch(() => null);
-    if (member) {
-      await member.timeout(TIMEOUT_DURATION, 'Auto-Warn: Excessive infractions').catch(() => {});
-      await sendLog(client, {
-        title: '⏱️ Auto-Timeout',
-        color: 0xED4245,
-        fields: [
-          { name: 'User', value: member.user.tag },
-          { name: 'Duration', value: `${TIMEOUT_DURATION / 60000} minutes` },
-          { name: 'Reason', value: 'Excessive infractions' }
-        ],
-        timestamp: new Date()
-      });
+    // Timeout if warnings exceed threshold
+    if (currentWarns + 1 >= WARN_THRESHOLD) {
+      const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+      if (member) {
+        await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive spam').catch(() => {});
+        await sendLog(client, {
+          title: '⏱️ Auto-Timeout: Spam',
+          color: 0xED4245,
+          fields: [
+            { name: 'User', value: member.user.tag },
+            { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+            { name: 'Reason', value: 'Excessive spam' }
+          ],
+          timestamp: new Date()
+        });
+      }
+      // Reset warnings and spam timestamps
+      warnings.set(message.author.id, 0);
+      userSpam.set(message.author.id, []);
     }
-    // Reset warnings after timeout
-    warnings.set(message.author.id, 0);
+    return; // Stop further processing for this message
+  }
+
+  // 2️⃣ Word blacklist check (keep your existing logic)
+  const guildWords = wordBlacklist.get(message.guild.id) || new Set();
+  const foundWord = [...guildWords].find(word => message.content.toLowerCase().includes(word.toLowerCase()));
+  if (foundWord) {
+    await message.delete().catch(() => {});
+    const currentWarns = warnings.get(message.author.id) || 0;
+    warnings.set(message.author.id, currentWarns + 1);
+
+    await message.author.send(`You were warned for sending a message with a prohibited term. Please use common sense when chatting.`).catch(() => {});
+
+    await sendLog(client, {
+      title: '⚠️ Auto-Warn: Blacklisted Word',
+      color: 0xFEE75C,
+      fields: [
+        { name: 'User', value: message.author.tag },
+        { name: 'Word', value: foundWord },
+        { name: 'Warnings', value: `${currentWarns + 1}` },
+        { name: 'Channel', value: message.channel.name }
+      ],
+      timestamp: new Date()
+    });
+
+    if (currentWarns + 1 >= WARN_THRESHOLD) {
+      const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+      if (member) {
+        await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
+        await sendLog(client, {
+          title: '⏱️ Auto-Timeout',
+          color: 0xED4245,
+          fields: [
+            { name: 'User', value: member.user.tag },
+            { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+            { name: 'Reason', value: 'Excessive infractions' }
+          ],
+          timestamp: new Date()
+        });
+      }
+      warnings.set(message.author.id, 0);
+    }
   }
 });
-
-
-async function dmOwner(client, message) {
-  try {
-    const owner = await client.users.fetch(process.env.OwnerID);
-    await owner.send(message);
-  } catch (err) {
-    console.error('Failed to DM owner:', err);
-  }
-}
-
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
