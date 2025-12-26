@@ -30,154 +30,97 @@ const WelcomeImage = process.env.WelcomeImage;
 
 const recentJoins = [];
 
-const { sendLog } = require('./utils/logger');
+const { diff } = require('./utils/diff');
+const { sendLog, formatDiffFields } = require('./utils/logger');
+const logs = await guild.fetchAuditLogs({ limit: 1 });
+const entry = logs.entries.first();
 
-client.on('roleCreate', role => {
-  sendLog(role.client, {
-    title: '🆕 Role Created',
-    color: 0x57F287,
-    fields: [
-      { name: 'Name', value: role.name, inline: true },
-      { name: 'ID', value: role.id, inline: true }
-    ]
-  });
-});
+Moderator: entry?.executor?.tag ?? 'Unknown'
 
-client.on('roleDelete', role => {
-  sendLog(role.client, {
-    title: '🗑️ Role Deleted',
-    color: 0xED4245,
-    fields: [
-      { name: 'Name', value: role.name, inline: true },
-      { name: 'ID', value: role.id, inline: true }
-    ]
-  });
-});
 
 client.on('roleUpdate', (oldRole, newRole) => {
+  const changes = diff(oldRole, newRole, [
+    'name',
+    'color',
+    'hoist',
+    'mentionable'
+  ]);
+
+  if (!changes.length) return;
+
   sendLog(newRole.client, {
     title: '✏️ Role Updated',
     color: 0xFEE75C,
     fields: [
       { name: 'Role', value: newRole.name },
-      { name: 'ID', value: newRole.id }
+      { name: 'ID', value: newRole.id },
+      { name: 'Moderator', value: entry.executor.tag },
+      ...formatDiffFields(changes)
     ]
   });
 });
 
-client.on('channelCreate', channel => {
-  sendLog(channel.client, {
-    title: '🆕 Channel Created',
-    color: 0x57F287,
-    fields: [
-      { name: 'Name', value: channel.name },
-      { name: 'ID', value: channel.id }
-    ]
-  });
-});
+client.on('channelUpdate', (oldCh, newCh) => {
+  const changes = diff(oldCh, newCh, [
+    'name',
+    'topic',
+    'nsfw',
+    'rateLimitPerUser'
+  ]);
 
-client.on('channelDelete', channel => {
-  sendLog(channel.client, {
-    title: '🗑️ Channel Deleted',
-    color: 0xED4245,
-    fields: [
-      { name: 'Name', value: channel.name },
-      { name: 'ID', value: channel.id }
-    ]
-  });
-});
+  if (!changes.length) return;
 
-client.on('channelUpdate', (oldChannel, newChannel) => {
-  sendLog(newChannel.client, {
+  sendLog(newCh.client, {
     title: '✏️ Channel Updated',
     color: 0xFEE75C,
     fields: [
-      { name: 'Channel', value: newChannel.name },
-      { name: 'ID', value: newChannel.id }
+      { name: 'Channel', value: newCh.name },
+      { name: 'ID', value: newCh.id },
+      { name: 'Moderator', value: entry.executor.tag },
+      ...formatDiffFields(changes)
     ]
   });
 });
 
 client.on('guildMemberUpdate', (oldMember, newMember) => {
-  // Nickname
-  if (oldMember.nickname !== newMember.nickname) {
-    sendLog(newMember.client, {
-      title: '📝 Nickname Changed',
-      color: 0x5865F2,
-      fields: [
-        { name: 'User', value: newMember.user.tag },
-        { name: 'Old', value: oldMember.nickname || 'None', inline: true },
-        { name: 'New', value: newMember.nickname || 'None', inline: true }
-      ]
-    });
-  }
+  if (oldMember.nickname === newMember.nickname) return;
 
-  // Roles
-  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
-  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
-
-  added.forEach(role => {
-    sendLog(newMember.client, {
-      title: '➕ Role Added',
-      color: 0x57F287,
-      fields: [
-        { name: 'User', value: newMember.user.tag },
-        { name: 'Role', value: role.name }
-      ]
-    });
-  });
-
-  removed.forEach(role => {
-    sendLog(newMember.client, {
-      title: '➖ Role Removed',
-      color: 0xED4245,
-      fields: [
-        { name: 'User', value: newMember.user.tag },
-        { name: 'Role', value: role.name }
-      ]
-    });
-  });
-});
-
-client.on('guildBanAdd', ban => {
-  sendLog(ban.client, {
-    title: '🔨 Member Banned',
-    color: 0xED4245,
+  sendLog(newMember.client, {
+    title: '📝 Nickname Changed',
+    color: 0x5865F2,
     fields: [
-      { name: 'User', value: ban.user.tag },
-      { name: 'ID', value: ban.user.id }
+      { name: 'User', value: newMember.user.tag },
+      {
+        name: 'Nickname',
+        value: `**Before:** ${oldMember.nickname || 'None'}\n**After:** ${newMember.nickname || 'None'}`
+      }
     ]
   });
 });
 
-client.on('guildMemberRemove', async member => {
-  try {
-    const logs = await member.guild.fetchAuditLogs({ limit: 1, type: 20 });
-    const entry = logs.entries.first();
+client.on('roleUpdate', (oldRole, newRole) => {
+  const oldPerms = oldRole.permissions.toArray();
+  const newPerms = newRole.permissions.toArray();
 
-    if (entry && entry.target.id === member.id) {
-      sendLog(member.client, {
-        title: '👢 Member Kicked',
-        color: 0xED4245,
-        fields: [
-          { name: 'User', value: member.user.tag },
-          { name: 'Moderator', value: entry.executor.tag }
-        ]
-      });
-    }
-  } catch {}
+  const added = newPerms.filter(p => !oldPerms.includes(p));
+  const removed = oldPerms.filter(p => !newPerms.includes(p));
+
+  if (!added.length && !removed.length) return;
+
+  sendLog(newRole.client, {
+    title: '🔐 Role Permissions Updated',
+    color: 0xED4245,
+    fields: [
+      { name: 'Role', value: newRole.name },
+      added.length
+        ? { name: '➕ Added', value: added.join(', ') }
+        : null,
+      removed.length
+        ? { name: '➖ Removed', value: removed.join(', ') }
+        : null
+    ].filter(Boolean)
+  });
 });
-
-
-async function sendLog(client, message) {
-  try {
-    const channel = await client.channels.fetch(process.env.logID);
-    if (!channel || !channel.isTextBased()) return;
-    await channel.send(message);
-  } catch (err) {
-    console.error('Logging failed:', err);
-  }
-}
 
 
 async function dmOwner(client, message) {
