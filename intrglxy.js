@@ -339,8 +339,8 @@ client.on('messageCreate', async (message) => {
     const currentWarns = warnings.get(message.author.id) || 0;
     warnings.set(message.author.id, currentWarns + 1);
 
-    // Delete messages in channel if you want
-    // await message.channel.bulkDelete(recentMessages.length).catch(() => {});
+    // Delete messages in channel
+    await message.channel.bulkDelete(recentMessages.length).catch(() => {});
 
     // DM the user
     await message.author.send(`You were spamming. Please use common sense.`).catch(() => {});
