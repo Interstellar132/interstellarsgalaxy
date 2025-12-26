@@ -3,7 +3,7 @@ const { wordBlacklist } = require('../utils/automod');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setName('blockword')
     .setDescription('Add or remove a word from the automod blacklist')
     .addStringOption(option =>
