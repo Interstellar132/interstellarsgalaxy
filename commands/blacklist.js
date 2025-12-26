@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { wordBlacklist } = require('../utils/automod'); // adjust path if needed
+const { wordBlacklist } = require('../utils/automod');
 
 module.exports = {
   data: new SlashCommandBuilder()
