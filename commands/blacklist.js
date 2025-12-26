@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { wordBlacklist } = require('../utils/automod');
 
 module.exports = {
@@ -17,6 +17,8 @@ module.exports = {
           { name: 'Add', value: 'add' },
           { name: 'Remove', value: 'remove' }
         )),
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+  
   async execute(interaction) {
     const word = interaction.options.getString('word').toLowerCase();
     const action = interaction.options.getString('action');
