@@ -32,6 +32,9 @@ const WelcomeImage = process.env.WelcomeImage;
 const { wordBlacklist, warnings } = require('./utils/automod');
 const WARN_THRESHOLD = 3;      // warnings before timeout
 const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
+const SPAM_MESSAGE_THRESHOLD = 5; // messages
+const SPAM_TIME_WINDOW = 7000;    // ms (7 seconds)
+const SPAM_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 const recentJoins = [];
 
