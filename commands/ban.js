@@ -1,71 +1,42 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const { sendLog } = require('../utils/logger.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ban')
-    .setDescription('Ban a member from the server')
+    .setDescription('Ban a member')
     .addUserOption(option =>
-      option
-        .setName('user')
+      option.setName('user')
         .setDescription('User to ban')
-        .setRequired(true)
-    )
+        .setRequired(true))
     .addStringOption(option =>
-      option
-        .setName('reason')
-        .setDescription('Reason for the ban')
-        .setRequired(false)
-    )
-    // Restrict command usage to admins
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
+      option.setName('reason')
+        .setDescription('Reason for ban')
+        .setRequired(false)),
+  
   async execute(interaction) {
-    const target = interaction.options.getUser('user');
-    const reason =
-      interaction.options.getString('reason') || 'No reason provided';
-
-    const member = await interaction.guild.members.fetch(target.id).catch(() => null);
-
-    if (!member) {
-      return interaction.reply({
-        content: 'I did not find this user.',
-        ephemeral: true
-      });
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+      return interaction.reply({ content: 'You do not have permission to ban members.', ephemeral: true });
     }
 
-    if (!member.bannable) {
-      return interaction.reply({
-        content: 'I cannot ban this user (role hierarchy).',
-        ephemeral: true
-      });
-    }
+    const member = interaction.options.getMember('user');
+    const reason = interaction.options.getString('reason') || 'No reason provided';
 
-    try {
-      await member.ban({ reason });
+    if (!member) return interaction.reply({ content: 'Member not found', ephemeral: true });
 
-      await interaction.reply({
-        content: `🔨 **${target.tag}** has been banned.\nReason: ${reason}`,
-        ephemeral: true
-      });
+    await member.ban({ reason }).catch(err => console.error(err));
 
-      // OPTIONAL: DM owner
-      try {
-        const owner = await interaction.client.users.fetch(process.env.OwnerID);
-        await owner.send(
-          `🔨 **Ban Command Used**
-User: ${target.tag} (${target.id})
-Moderator: ${interaction.user.tag}
-Reason: ${reason}`
-        );
-      } catch {}
+    await sendLog(interaction.client, {
+      title: '⛔ Member Banned',
+      color: 0xED4245,
+      fields: [
+        { name: 'User', value: member.user.tag },
+        { name: 'Reason', value: reason },
+        { name: 'Moderator', value: interaction.user.tag }
+      ],
+      timestamp: new Date()
+    });
 
-    } catch (err) {
-      console.error(err);
-      interaction.reply({
-        content: 'Failed to ban the user.',
-        ephemeral: true
-      });
-    }
+    await interaction.reply({ content: `Banned ${member.user.tag}`, ephemeral: true });
   }
 };
-
