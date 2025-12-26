@@ -39,34 +39,13 @@ const { diffOverwrites } = require('./utils/permDiff');
 Moderator: entry?.executor?.tag ?? 'Unknown'
 
 
-client.on('roleUpdate', (oldRole, newRole) => {
-  const changes = diff(oldRole, newRole, [
-    'name',
-    'color',
-    'hoist',
-    'mentionable'
-  ]);
-
-  if (!changes.length) return;
-
-  sendLog(newRole.client, {
-    title: '✏️ Role Updated',
-    color: 0xFEE75C,
-    fields: [
-      { name: 'Role', value: newRole.name },
-      { name: 'ID', value: newRole.id },
-      { name: 'Moderator', value: entry.executor.tag },
-      ...formatDiffFields(changes)
-    ]
-  });
-});
+/* ─────────────── CHANNEL UPDATE ─────────────── */
 
 client.on('channelUpdate', async (oldChannel, newChannel) => {
   const logChannel = newChannel.guild.channels.cache.get(process.env.logID);
   if (!logChannel || !logChannel.isTextBased()) return;
 
-  /* ─────────────── CHANNEL PROPERTY DIFFS ─────────────── */
-
+  // 1️⃣ Channel property diffs
   const channelDiffs = diff(oldChannel, newChannel, [
     'name',
     'topic',
@@ -75,21 +54,21 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
   ]);
 
   if (channelDiffs.length) {
-    const logs = await newChannel.guild.fetchAuditLogs({
-      type: AuditLogEvent.ChannelUpdate,
-      limit: 1
-    }).catch(() => null);
-
-    const executor = logs?.entries.first()?.executor;
+    let executor;
+    try {
+      const logs = await newChannel.guild.fetchAuditLogs({
+        type: AuditLogEvent.ChannelUpdate,
+        limit: 1
+      });
+      executor = logs.entries.first()?.executor;
+    } catch {}
 
     const embed = new EmbedBuilder()
       .setTitle('✏️ Channel Updated')
       .setColor(0xFEE75C)
       .addFields(
         { name: 'Channel', value: `${newChannel} (${newChannel.id})` },
-        executor
-          ? { name: 'Moderator', value: executor.tag }
-          : { name: 'Moderator', value: 'Unknown' },
+        { name: 'Moderator', value: executor?.tag || 'Unknown' },
         ...channelDiffs.map(d => ({
           name: d.name,
           value: `**Before:** ${d.old}\n**After:** ${d.new}`,
@@ -101,115 +80,139 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
     await logChannel.send({ embeds: [embed] });
   }
 
-  /* ─────────────── PERMISSION OVERWRITE DIFFS ─────────────── */
-
+  // 2️⃣ Permission overwrite diffs
   const permChanges = diffOverwrites(
     oldChannel.permissionOverwrites.cache,
     newChannel.permissionOverwrites.cache
   );
 
-  if (!permChanges.length) return;
-
-  const permLogs = await newChannel.guild.fetchAuditLogs({
-    type: AuditLogEvent.ChannelOverwriteUpdate,
-    limit: 1
-  }).catch(() => null);
-
-  const permExecutor = permLogs?.entries.first()?.executor;
-
-  for (const change of permChanges) {
-    const target =
-      change.type === 0
-        ? newChannel.guild.roles.cache.get(change.id)
-        : await newChannel.guild.members.fetch(change.id).catch(() => null);
-
-    const fields = [
-      { name: 'Channel', value: `${newChannel}` },
-      {
-        name: 'Target',
-        value: target
-          ? change.type === 0
-            ? `Role: **${target.name}**`
-            : `Member: **${target.user.tag}**`
-          : `ID: ${change.id}`
-      },
-      permExecutor
-        ? { name: 'Moderator', value: permExecutor.tag }
-        : { name: 'Moderator', value: 'Unknown' }
-    ];
-
-    if (change.addedAllow.length)
-      fields.push({
-        name: '➕ Allowed',
-        value: change.addedAllow.join(', ')
+  if (permChanges.length) {
+    let permExecutor;
+    try {
+      const logs = await newChannel.guild.fetchAuditLogs({
+        type: AuditLogEvent.ChannelOverwriteUpdate,
+        limit: 1
       });
+      permExecutor = logs.entries.first()?.executor;
+    } catch {}
 
-    if (change.removedAllow.length)
-      fields.push({
-        name: '➖ Allow Removed',
-        value: change.removedAllow.join(', ')
-      });
+    for (const change of permChanges) {
+      let target;
+      if (change.type === 0) {
+        target = newChannel.guild.roles.cache.get(change.id);
+      } else {
+        target = await newChannel.guild.members.fetch(change.id).catch(() => null);
+      }
 
-    if (change.addedDeny.length)
-      fields.push({
-        name: '🚫 Denied',
-        value: change.addedDeny.join(', ')
-      });
+      const fields = [
+        { name: 'Channel', value: `${newChannel}` },
+        {
+          name: 'Target',
+          value: target
+            ? change.type === 0
+              ? `Role: **${target.name}**`
+              : `Member: **${target.user.tag}**`
+            : `ID: ${change.id}`
+        },
+        { name: 'Moderator', value: permExecutor?.tag || 'Unknown' }
+      ];
 
-    if (change.removedDeny.length)
-      fields.push({
-        name: '♻️ Deny Removed',
-        value: change.removedDeny.join(', ')
-      });
+      if (change.addedAllow.length)
+        fields.push({ name: '➕ Allowed', value: change.addedAllow.join(', ') });
+      if (change.removedAllow.length)
+        fields.push({ name: '➖ Allow Removed', value: change.removedAllow.join(', ') });
+      if (change.addedDeny.length)
+        fields.push({ name: '🚫 Denied', value: change.addedDeny.join(', ') });
+      if (change.removedDeny.length)
+        fields.push({ name: '♻️ Deny Removed', value: change.removedDeny.join(', ') });
 
-    const permEmbed = new EmbedBuilder()
-      .setTitle('🔐 Channel Permissions Updated')
-      .setColor(0xED4245)
-      .addFields(fields)
-      .setTimestamp();
+      const permEmbed = new EmbedBuilder()
+        .setTitle('🔐 Channel Permissions Updated')
+        .setColor(0xED4245)
+        .addFields(fields)
+        .setTimestamp();
 
-    await logChannel.send({ embeds: [permEmbed] });
+      await logChannel.send({ embeds: [permEmbed] });
+    }
   }
 });
 
-client.on('guildMemberUpdate', (oldMember, newMember) => {
-  if (oldMember.nickname === newMember.nickname) return;
+/* ─────────────── MEMBER UPDATE ─────────────── */
 
-  sendLog(newMember.client, {
-    title: '📝 Nickname Changed',
-    color: 0x5865F2,
-    fields: [
-      { name: 'User', value: newMember.user.tag },
-      {
-        name: 'Nickname',
-        value: `**Before:** ${oldMember.nickname || 'None'}\n**After:** ${newMember.nickname || 'None'}`
-      }
-    ]
-  });
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  const logChannel = newMember.guild.channels.cache.get(process.env.logID);
+  if (!logChannel || !logChannel.isTextBased()) return;
+
+  // 1️⃣ Nickname changes
+  if (oldMember.nickname !== newMember.nickname) {
+    const embed = new EmbedBuilder()
+      .setTitle('📝 Nickname Changed')
+      .setColor(0x5865F2)
+      .addFields(
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Before', value: oldMember.nickname || 'None', inline: true },
+        { name: 'After', value: newMember.nickname || 'None', inline: true }
+      )
+      .setTimestamp();
+
+    await logChannel.send({ embeds: [embed] });
+  }
+
+  // 2️⃣ Role changes
+  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
+  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
+
+  for (const role of added.values()) {
+    const embed = new EmbedBuilder()
+      .setTitle('➕ Role Added')
+      .setColor(0x57F287)
+      .addFields(
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Role', value: role.name }
+      )
+      .setTimestamp();
+    await logChannel.send({ embeds: [embed] });
+  }
+
+  for (const role of removed.values()) {
+    const embed = new EmbedBuilder()
+      .setTitle('➖ Role Removed')
+      .setColor(0xED4245)
+      .addFields(
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Role', value: role.name }
+      )
+      .setTimestamp();
+    await logChannel.send({ embeds: [embed] });
+  }
 });
 
-client.on('roleUpdate', (oldRole, newRole) => {
-  const oldPerms = oldRole.permissions.toArray();
-  const newPerms = newRole.permissions.toArray();
+/* ─────────────── MEMBER REMOVE (KICK/BAN) ─────────────── */
 
-  const added = newPerms.filter(p => !oldPerms.includes(p));
-  const removed = oldPerms.filter(p => !newPerms.includes(p));
+client.on('guildMemberRemove', async (member) => {
+  const logChannel = member.guild.channels.cache.get(process.env.logID);
+  if (!logChannel || !logChannel.isTextBased()) return;
 
-  if (!added.length && !removed.length) return;
+  try {
+    // Check audit log for kick
+    const logs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberKick });
+    const entry = logs.entries.first();
 
-  sendLog(newRole.client, {
-    title: '🔐 Role Permissions Updated',
-    color: 0xED4245,
-    fields: [
-      { name: 'Role', value: newRole.name },
-      added.length
-        ? { name: '➕ Added', value: added.join(', ') }
-        : null,
-      removed.length
-        ? { name: '➖ Removed', value: removed.join(', ') }
-        : null
-    ].filter(Boolean)
-  });
+    if (entry && entry.target.id === member.id) {
+      const embed = new EmbedBuilder()
+        .setTitle('👢 Member Kicked')
+        .setColor(0xED4245)
+        .addFields(
+          { name: 'User', value: member.user.tag },
+          { name: 'Moderator', value: entry.executor.tag }
+        )
+        .setTimestamp();
+
+      await logChannel.send({ embeds: [embed] });
+    }
+  } catch (err) {
+    console.error('Kick log failed:', err);
+  }
 });
 
 
