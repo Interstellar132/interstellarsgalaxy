@@ -30,6 +30,145 @@ const WelcomeImage = process.env.WelcomeImage;
 
 const recentJoins = [];
 
+const { sendLog } = require('./utils/logger');
+
+client.on('roleCreate', role => {
+  sendLog(role.client, {
+    title: '🆕 Role Created',
+    color: 0x57F287,
+    fields: [
+      { name: 'Name', value: role.name, inline: true },
+      { name: 'ID', value: role.id, inline: true }
+    ]
+  });
+});
+
+client.on('roleDelete', role => {
+  sendLog(role.client, {
+    title: '🗑️ Role Deleted',
+    color: 0xED4245,
+    fields: [
+      { name: 'Name', value: role.name, inline: true },
+      { name: 'ID', value: role.id, inline: true }
+    ]
+  });
+});
+
+client.on('roleUpdate', (oldRole, newRole) => {
+  sendLog(newRole.client, {
+    title: '✏️ Role Updated',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'Role', value: newRole.name },
+      { name: 'ID', value: newRole.id }
+    ]
+  });
+});
+
+client.on('channelCreate', channel => {
+  sendLog(channel.client, {
+    title: '🆕 Channel Created',
+    color: 0x57F287,
+    fields: [
+      { name: 'Name', value: channel.name },
+      { name: 'ID', value: channel.id }
+    ]
+  });
+});
+
+client.on('channelDelete', channel => {
+  sendLog(channel.client, {
+    title: '🗑️ Channel Deleted',
+    color: 0xED4245,
+    fields: [
+      { name: 'Name', value: channel.name },
+      { name: 'ID', value: channel.id }
+    ]
+  });
+});
+
+client.on('channelUpdate', (oldChannel, newChannel) => {
+  sendLog(newChannel.client, {
+    title: '✏️ Channel Updated',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'Channel', value: newChannel.name },
+      { name: 'ID', value: newChannel.id }
+    ]
+  });
+});
+
+client.on('guildMemberUpdate', (oldMember, newMember) => {
+  // Nickname
+  if (oldMember.nickname !== newMember.nickname) {
+    sendLog(newMember.client, {
+      title: '📝 Nickname Changed',
+      color: 0x5865F2,
+      fields: [
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Old', value: oldMember.nickname || 'None', inline: true },
+        { name: 'New', value: newMember.nickname || 'None', inline: true }
+      ]
+    });
+  }
+
+  // Roles
+  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
+  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
+
+  added.forEach(role => {
+    sendLog(newMember.client, {
+      title: '➕ Role Added',
+      color: 0x57F287,
+      fields: [
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Role', value: role.name }
+      ]
+    });
+  });
+
+  removed.forEach(role => {
+    sendLog(newMember.client, {
+      title: '➖ Role Removed',
+      color: 0xED4245,
+      fields: [
+        { name: 'User', value: newMember.user.tag },
+        { name: 'Role', value: role.name }
+      ]
+    });
+  });
+});
+
+client.on('guildBanAdd', ban => {
+  sendLog(ban.client, {
+    title: '🔨 Member Banned',
+    color: 0xED4245,
+    fields: [
+      { name: 'User', value: ban.user.tag },
+      { name: 'ID', value: ban.user.id }
+    ]
+  });
+});
+
+client.on('guildMemberRemove', async member => {
+  try {
+    const logs = await member.guild.fetchAuditLogs({ limit: 1, type: 20 });
+    const entry = logs.entries.first();
+
+    if (entry && entry.target.id === member.id) {
+      sendLog(member.client, {
+        title: '👢 Member Kicked',
+        color: 0xED4245,
+        fields: [
+          { name: 'User', value: member.user.tag },
+          { name: 'Moderator', value: entry.executor.tag }
+        ]
+      });
+    }
+  } catch {}
+});
+
+
 async function sendLog(client, message) {
   try {
     const channel = await client.channels.fetch(process.env.logID);
