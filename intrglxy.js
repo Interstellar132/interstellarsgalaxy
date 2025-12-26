@@ -35,7 +35,7 @@ const recentJoins = [];
 const { diff } = require('./utils/diff.js');
 const { diffOverwrites } = require('./utils/permDiff.js');
 const { sendLog } = require('./utils/logger.js');
-const { diffRole } = require('./permDiff.js');
+const { diffRole } = require('./utils/permDiff.js');
 
 
 /* ─────────────── CHANNEL UPDATE ─────────────── */
