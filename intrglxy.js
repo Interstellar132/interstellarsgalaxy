@@ -213,41 +213,51 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.on('messageUpdate', async (oldMessage, newMessage) => {
-  if (oldMessage.author.bot) return; // Ignore bot messages
-  if (oldMessage.content === newMessage.content) return; // Ignore embeds/attachments only
+  try {
+    if (oldMessage.partial) oldMessage = await oldMessage.fetch().catch(() => null);
+    if (newMessage.partial) newMessage = await newMessage.fetch().catch(() => null);
+    if (!oldMessage || !newMessage) return;
+    if (oldMessage.author?.bot) return;
+    if (oldMessage.content === newMessage.content) return; // ignore embed-only changes
 
-  const logChannel = oldMessage.guild.channels.cache.get(process.env.logID);
-  if (!logChannel || !logChannel.isTextBased()) return;
-
-  await sendLog(client, {
-    title: '✏️ Message Edited',
-    color: 0xFEE75C,
-    fields: [
-      { name: 'User', value: oldMessage.author.tag },
-      { name: 'Channel', value: `${oldMessage.channel}` },
-      { name: 'Before', value: oldMessage.content || '[empty]' },
-      { name: 'After', value: newMessage.content || '[empty]' }
-    ],
-    timestamp: new Date()
-  });
+    await sendLog(client, {
+      title: '✏️ Message Edited',
+      color: 0xFEE75C,
+      fields: [
+        { name: 'User', value: oldMessage.author.tag },
+        { name: 'Channel', value: `${oldMessage.channel}` },
+        { name: 'Before', value: oldMessage.content || '[empty]' },
+        { name: 'After', value: newMessage.content || '[empty]' }
+      ],
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error('Error logging edited message:', err);
+  }
 });
 
 client.on('messageDelete', async (message) => {
-  if (message.author.bot) return; // Ignore bot messages
+  try {
+    if (message.partial) {
+      message = await message.fetch().catch(() => null);
+      if (!message) return; // Could not fetch, skip
+    }
+    if (!message.content) return; // No content to log
+    if (message.author?.bot) return; // Ignore bot messages
 
-  const logChannel = message.guild.channels.cache.get(process.env.logID);
-  if (!logChannel || !logChannel.isTextBased()) return;
-
-  await sendLog(client, {
-    title: '🗑️ Message Deleted',
-    color: 0xED4245,
-    fields: [
-      { name: 'User', value: message.author.tag },
-      { name: 'Channel', value: `${message.channel}` },
-      { name: 'Content', value: message.content || '[empty]' }
-    ],
-    timestamp: new Date()
-  });
+    await sendLog(client, {
+      title: '🗑️ Message Deleted',
+      color: 0xED4245,
+      fields: [
+        { name: 'User', value: message.author.tag },
+        { name: 'Channel', value: `${message.channel}` },
+        { name: 'Content', value: message.content }
+      ],
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error('Error logging deleted message:', err);
+  }
 });
 
 
