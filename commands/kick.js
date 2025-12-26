@@ -1,63 +1,42 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const { sendLog } = require('../utils/logger.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('kick')
-    .setDescription('Kick a member from the server')
+    .setDescription('Kick a member')
     .addUserOption(option =>
-      option
-        .setName('user')
+      option.setName('user')
         .setDescription('User to kick')
-        .setRequired(true)
-    )
+        .setRequired(true))
     .addStringOption(option =>
-      option
-        .setName('reason')
-        .setDescription('Reason for the kick')
-        .setRequired(false)
-    )
-    // Admin-only
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+      option.setName('reason')
+        .setDescription('Reason for kick')
+        .setRequired(false)),
 
   async execute(interaction) {
-    const target = interaction.options.getUser('user');
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
+      return interaction.reply({ content: 'You do not have permission to kick members.', ephemeral: true });
+    }
+
+    const member = interaction.options.getMember('user');
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
-    const member = await interaction.guild.members.fetch(target.id).catch(() => null);
+    if (!member) return interaction.reply({ content: 'Member not found', ephemeral: true });
 
-    if (!member) {
-      return interaction.reply({ content: 'I cannot find this user', ephemeral: true });
-    }
+    await member.kick(reason).catch(err => console.error(err));
 
-    if (!member.kickable) {
-      return interaction.reply({ content: 'I cannot kick this user (role hierarchy).', ephemeral: true });
-    }
+    await sendLog(interaction.client, {
+      title: '👢 Member Kicked',
+      color: 0xED4245,
+      fields: [
+        { name: 'User', value: member.user.tag },
+        { name: 'Reason', value: reason },
+        { name: 'Moderator', value: interaction.user.tag }
+      ],
+      timestamp: new Date()
+    });
 
-    try {
-      await member.kick(reason);
-
-      await interaction.reply({
-        content: `👢 **${target.tag}** has been kicked.\nReason: ${reason}`,
-        ephemeral: true
-      });
-
-      // DM owner
-      try {
-        const owner = await interaction.client.users.fetch(process.env.OwnerID);
-        await owner.send(
-          `👢 **Kick Command Used**
-User: ${target.tag} (${target.id})
-Moderator: ${interaction.user.tag}
-Reason: ${reason}`
-        );
-      } catch (err) {
-        console.error('Failed to DM owner:', err);
-      }
-
-    } catch (err) {
-      console.error(err);
-      interaction.reply({ content: 'Failed to kick the user.', ephemeral: true });
-    }
+    await interaction.reply({ content: `Kicked ${member.user.tag}`, ephemeral: true });
   }
 };
-
