@@ -27,5 +27,13 @@ async function sendLog(client, options) {
     console.error('Embed log failed:', err);
   }
 }
+function formatDiffFields(diffs) {
+  return diffs.map(d => ({
+    name: d.name,
+    value: `**Before:** ${d.old}\n**After:** ${d.new}`,
+    inline: false
+  }));
+}
 
-module.exports = { sendLog };
+module.exports = { sendLog, formatDiffFields };
+
