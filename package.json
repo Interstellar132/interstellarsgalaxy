@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node deploy-commands.js && node intrglxy.js"
   },
+  {
+  "type": "commonjs"
+},
   "dependencies": {
     "discord.js": "^14.14.1"
   },
