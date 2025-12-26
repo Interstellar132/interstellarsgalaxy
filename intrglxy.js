@@ -13,6 +13,7 @@ const client = new Client({
     GatewayIntentBits.GuildModeration,
     GatewayIntentBits.MessageContent
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 // ================= CONFIG =================
