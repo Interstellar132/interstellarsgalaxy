@@ -29,6 +29,17 @@ const MIN_ACCOUNT_AGE_DAYS = 14;
 const JOIN_WINDOW_SECONDS = 30;
 const JOIN_THRESHOLD = 5;
 const WelcomeImage = process.env.WelcomeImage;
+// userId -> number of warnings
+const warnings = new Map();
+
+// Guild-specific blacklisted words
+// Example: { guildId: Set([...words]) }
+const wordBlacklist = new Map();
+
+// Configurable thresholds
+const WARN_THRESHOLD = 3;      // warnings before timeout
+const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
+
 
 const recentJoins = [];
 
@@ -314,6 +325,58 @@ client.on('roleUpdate', async (oldRole, newRole) => {
     timestamp: new Date()
   });
 });
+
+client.on('messageCreate', async (message) => {
+  if (message.author.bot || !message.guild) return;
+
+  const guildWords = wordBlacklist.get(message.guild.id) || new Set();
+
+  const foundWord = [...guildWords].find(word => message.content.toLowerCase().includes(word.toLowerCase()));
+  if (!foundWord) return;
+
+  await message.delete().catch(() => {});
+
+  // Add warning
+  const currentWarns = warnings.get(message.author.id) || 0;
+  warnings.set(message.author.id, currentWarns + 1);
+
+  // Notify the user
+  await message.author.send(`You have been warned for using a prohibited word. Please use common sense when chatting.`).catch(() => {});
+
+  // Log the warning
+  await sendLog(client, {
+    title: '⚠️ Auto-Warn',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'User', value: message.author.tag },
+      { name: 'Word', value: foundWord },
+      { name: 'Warnings', value: `${currentWarns + 1}` },
+      { name: 'Channel', value: message.channel.name }
+    ],
+    timestamp: new Date()
+  });
+
+  // Timeout if warnings exceed threshold
+  if (currentWarns + 1 >= WARN_THRESHOLD) {
+    const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+    if (member) {
+      await member.timeout(TIMEOUT_DURATION, 'Auto-Warn: Excessive infractions').catch(() => {});
+      await sendLog(client, {
+        title: '⏱️ Auto-Timeout',
+        color: 0xED4245,
+        fields: [
+          { name: 'User', value: member.user.tag },
+          { name: 'Duration', value: `${TIMEOUT_DURATION / 60000} minutes` },
+          { name: 'Reason', value: 'Excessive infractions' }
+        ],
+        timestamp: new Date()
+      });
+    }
+    // Reset warnings after timeout
+    warnings.set(message.author.id, 0);
+  }
+});
+
 
 async function dmOwner(client, message) {
   try {
