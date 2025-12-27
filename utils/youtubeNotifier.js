@@ -46,7 +46,7 @@ async function checkYouTube(client) {
   if (!channel) return;
 
   const embed = new EmbedBuilder()
-    .setColor(0xFF0000)
+    .setColor("#DC143C")
     .setTitle(title || 'New YouTube Video')
     .setURL(`https://youtu.be/${videoId}`)
     .setAuthor({
@@ -57,7 +57,7 @@ async function checkYouTube(client) {
     .setTimestamp(published ? new Date(published) : new Date())
     .setFooter({ text: 'New upload' });
 
-  await channel.send('Interstellar uploaded a new video!' + '');
+  await channel.send(`<@&1114778023951081584> Interstellar uploaded a new video!`);
   await channel.send({ embeds: [embed] });
 }
 
