@@ -36,6 +36,7 @@ const SPAM_MESSAGE_THRESHOLD = 5; // messages
 const SPAM_TIME_WINDOW = 7000;    // ms (7 seconds)
 const SPAM_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const { checkYouTube } = require('./utils/youtubeNotifier');
+const { checkTwitch } = require('./utils/twitchNotifier');
 
 const recentJoins = [];
 
@@ -747,7 +748,12 @@ client.user.setPresence({
   setInterval(checkForNewLevel, checkInterval);
 
    checkYouTube(client);
-  setInterval(() => checkYouTube(client), 5 * 60 * 1000);
+  checkTwitch(client);
+  
+   setInterval(() => {
+    checkYouTube(client).catch(console.error);
+    checkTwitch(client).catch(console.error);
+  }, 5 * 60 * 1000);
 });
 
 if (!token) {
