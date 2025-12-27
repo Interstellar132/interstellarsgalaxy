@@ -1,5 +1,4 @@
 const fs = require('fs');
-const fetch = require('node-fetch');
 const { EmbedBuilder } = require('discord.js');
 
 const STATE_FILE = './youtube-state.json';
