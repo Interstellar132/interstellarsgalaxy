@@ -17,6 +17,11 @@ function extract(tag, xml) {
   return match ? match[1].trim() : null;
 }
 
+function extractEntry(xml) {
+  const match = xml.match(/<entry>([\s\S]*?)<\/entry>/);
+  return match ? match[1] : null;
+}
+
 function cleanHtml(text) {
   return text
     .replace(/<!\[CDATA\[|\]\]>/g, '')
@@ -35,7 +40,10 @@ async function checkYouTube(client) {
   const res = await fetch(feedUrl);
   const xml = await res.text();
 
-  const videoId = extract('yt:videoId', xml);
+  const entry = extractEntry(xml);
+  if (!entry) return;
+
+  const videoId = extract('yt:videoId', entry);
   if (!videoId) return;
 
   const state = loadState();
@@ -44,20 +52,19 @@ async function checkYouTube(client) {
   state.lastVideoId = videoId;
   saveState(state);
 
-  const title = cleanHtml(extract('title', xml) || 'New YouTube Video');
-  const description = cleanHtml(extract('media:description', xml) || '');
-  const channelName = extract('name', xml);
-  const published = extract('published', xml);
+  const title = cleanHtml(extract('title', entry)) || 'New YouTube Video';
+  const description = cleanHtml(extract('media:description', entry) || '');
+  const published = extract('published', entry);
 
   const channel = await client.channels.fetch(announceChannelId).catch(() => null);
   if (!channel) return;
 
   const embed = new EmbedBuilder()
     .setColor(0xFF0000)
-    .setTitle(title)
+    .setTitle(title) // ✅ ACTUAL VIDEO TITLE
     .setURL(`https://youtu.be/${videoId}`)
     .setAuthor({
-      name: channelName || 'YouTube',
+      name: 'New YouTube Upload',
       iconURL: 'https://www.youtube.com/s/desktop/fe2e0f1d/img/favicon_144x144.png'
     })
     .setThumbnail(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`)
@@ -67,11 +74,10 @@ async function checkYouTube(client) {
         : description || '*No description provided*'
     )
     .setTimestamp(published ? new Date(published) : new Date())
-    .setFooter({ text: 'New YouTube upload' });
-  
+    .setFooter({ text: 'YouTube' });
+
   await channel.send(`<@&1114778023951081584> Interstellar uploaded a new video!`);
   await channel.send({ embeds: [embed] });
 }
 
 module.exports = { checkYouTube };
-
