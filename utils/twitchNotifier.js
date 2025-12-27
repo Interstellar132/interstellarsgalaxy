@@ -74,7 +74,7 @@ async function checkTwitch(client) {
     .setURL(`https://twitch.tv/${channelName}`)
     .setAuthor({
       name: `${stream.user_name} is LIVE on Twitch`,
-      iconURL: 'https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png'
+      iconURL: 'https://i.ibb.co/m5dJFsvC/twitch-logo-transparent-png-20.webp'
     })
     .setImage(thumbnail)
     .addFields(
