@@ -35,6 +35,7 @@ const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
 const SPAM_MESSAGE_THRESHOLD = 5; // messages
 const SPAM_TIME_WINDOW = 7000;    // ms (7 seconds)
 const SPAM_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const { checkYouTube } = require('./utils/youtubeNotifier');
 
 const recentJoins = [];
 
@@ -744,6 +745,9 @@ client.user.setPresence({
   
   checkForNewLevel();
   setInterval(checkForNewLevel, checkInterval);
+
+   checkYouTube(client);
+  setInterval(() => checkYouTube(client), 5 * 60 * 1000);
 });
 
 if (!token) {
