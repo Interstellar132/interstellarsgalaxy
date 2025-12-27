@@ -65,7 +65,7 @@ async function checkYouTube(client) {
     .setURL(`https://youtu.be/${videoId}`)
     .setAuthor({
       name: 'New YouTube Upload',
-      iconURL: 'https://www.youtube.com/s/desktop/fe2e0f1d/img/favicon_144x144.png'
+      iconURL: 'https://i.ibb.co/mCZGCWpV/youtube-logo-youtube-icon-transparent-free-png.webp'
     })
     .setThumbnail(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`)
     .setDescription(
