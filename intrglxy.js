@@ -29,7 +29,7 @@ const MIN_ACCOUNT_AGE_DAYS = 14;
 const JOIN_WINDOW_SECONDS = 30;
 const JOIN_THRESHOLD = 5;
 const WelcomeImage = process.env.WelcomeImage;
-const { wordBlacklist, warnings, userSpam } = require('./utils/automod');
+const { warnings, userSpam } = require('./utils/automod');
 const WARN_THRESHOLD = 3;      // warnings before timeout
 const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
 const SPAM_MESSAGE_THRESHOLD = 5; // messages
@@ -37,6 +37,7 @@ const SPAM_TIME_WINDOW = 7000;    // ms (7 seconds)
 const SPAM_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const { checkYouTube } = require('./utils/youtubeNotifier');
 const { checkTwitch } = require('./utils/twitchNotifier');
+const blacklist = require('./utils/wordBlacklist');
 
 const recentJoins = [];
 
