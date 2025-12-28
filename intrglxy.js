@@ -397,7 +397,7 @@ client.on('messageCreate', async (message) => {
   warnings.set(userId, newWarns);
 
   await message.author.send(
-    `⚠️ You have been warned for using a prohibited word. Please use common sense.`
+    `You have been warned for using a prohibited word. Please use common sense.`
   ).catch(() => {});
 
   await sendLog(client, {
