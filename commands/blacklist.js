@@ -1,65 +1,91 @@
-const { SlashCommandBuilder, PermissionsBitField  } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const blacklist = require('../utils/wordBlacklist');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     .setName('blacklist')
-    .setDescription('Manage blocked words')
+    .setDescription('Manage blacklisted words')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(sub =>
-      sub.setName('Add')
+      sub
+        .setName('add')
         .setDescription('Add a word to the blacklist')
         .addStringOption(opt =>
-          opt.setName('word')
-            .setDescription('Word to block')
+          opt
+            .setName('word')
+            .setDescription('Word to blacklist')
             .setRequired(true)
         )
     )
     .addSubcommand(sub =>
-      sub.setName('Remove')
+      sub
+        .setName('remove')
         .setDescription('Remove a word from the blacklist')
         .addStringOption(opt =>
-          opt.setName('word')
-            .setDescription('Word to unblock')
+          opt
+            .setName('word')
+            .setDescription('Word to remove')
             .setRequired(true)
         )
     )
     .addSubcommand(sub =>
-      sub.setName('list')
+      sub
+        .setName('list')
         .setDescription('List all blacklisted words')
     ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
-    const word = interaction.options.getString('word')?.toLowerCase();
 
     if (sub === 'add') {
-      const result = blacklist.add(word);
+      const word = interaction.options.getString('word');
+
+      const added = blacklist.add(word);
+      if (!added) {
+        return interaction.reply({
+          content: `⚠️ **${word}** is already blacklisted.`,
+          ephemeral: true
+        });
+      }
 
       return interaction.reply({
-        content: result.added
-          ? `🚫 **${word}** has been blacklisted (variants included).`
-          : `⚠️ **${word}** is already blacklisted.`,
+        content: `✅ **${word}** has been added to the blacklist.`,
         ephemeral: true
       });
     }
 
     if (sub === 'remove') {
-      blacklist.remove(word);
+      const word = interaction.options.getString('word');
+
+      const removed = blacklist.remove(word);
+      if (!removed) {
+        return interaction.reply({
+          content: `⚠️ **${word}** is not in the blacklist.`,
+          ephemeral: true
+        });
+      }
+
       return interaction.reply({
-        content: `🗑️ **${word}** removed from the blacklist.`,
+        content: `🗑️ **${word}** has been removed from the blacklist.`,
         ephemeral: true
       });
     }
 
     if (sub === 'list') {
-      const words = blacklist.load();
+      const words = blacklist.list();
+
+      if (!words.length) {
+        return interaction.reply({
+          content: '📭 No blacklisted words.',
+          ephemeral: true
+        });
+      }
+
       return interaction.reply({
-        content: words.length
-          ? `🚫 Blacklisted words:\n\`${words.join('`, `')}\``
-          : '✅ No blacklisted words set.',
+        content: `🚫 **Blacklisted Words:**\n${words.map(w => `• ${w}`).join('\n')}`,
         ephemeral: true
       });
     }
   }
 };
+
