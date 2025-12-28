@@ -3,6 +3,7 @@ const blacklist = require('../utils/wordBlacklist');
 
 module.exports = {
   data: new SlashCommandBuilder()
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     .setName('blacklist')
     .setDescription('Manage blocked words')
     .addSubcommand(sub =>
