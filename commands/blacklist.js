@@ -7,7 +7,7 @@ module.exports = {
     .setName('blacklist')
     .setDescription('Manage blocked words')
     .addSubcommand(sub =>
-      sub.setName('add')
+      sub.setName('Add')
         .setDescription('Add a word to the blacklist')
         .addStringOption(opt =>
           opt.setName('word')
@@ -16,7 +16,7 @@ module.exports = {
         )
     )
     .addSubcommand(sub =>
-      sub.setName('remove')
+      sub.setName('Remove')
         .setDescription('Remove a word from the blacklist')
         .addStringOption(opt =>
           opt.setName('word')
