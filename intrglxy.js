@@ -389,8 +389,7 @@ client.on('messageCreate', async (message) => {
      2️⃣ BLACKLIST WORD CHECK
   ============================ */
 
-  const content = message.content.toLowerCase();
-  const regexes = blacklist.getRegexes();
+const matched = blacklist.matches(message.content);
 
   for (const { word, regex } of regexes) {
     if (regex.test(content)) {
