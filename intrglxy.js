@@ -334,7 +334,6 @@ client.on('messageCreate', async (message) => {
   /* ============================
      1️⃣ SPAM DETECTION
   ============================ */
-
   const timestamps = userSpam.get(userId) || [];
   timestamps.push(now);
 
@@ -348,7 +347,7 @@ client.on('messageCreate', async (message) => {
 
     await message.channel.bulkDelete(recentMessages.length).catch(() => {});
     await message.author.send(
-      `⚠️ You have been warned for spamming. Please slow down.`
+      `⚠️ You have been warned for spamming. Please stop.`
     ).catch(() => {});
 
     await sendLog(client, {
@@ -388,52 +387,47 @@ client.on('messageCreate', async (message) => {
   /* ============================
      2️⃣ BLACKLIST WORD CHECK
   ============================ */
+  const matchedWord = blacklist.matches(message.content); // returns the word that matched, or null
+  if (!matchedWord) return;
 
-const matched = blacklist.matches(message.content);
+  await message.delete().catch(() => {});
 
-  for (const { word, regex } of regexes) {
-    if (regex.test(content)) {
-      await message.delete().catch(() => {});
+  const currentWarns = warnings.get(userId) || 0;
+  const newWarns = currentWarns + 1;
+  warnings.set(userId, newWarns);
 
-      const currentWarns = warnings.get(userId) || 0;
-      const newWarns = currentWarns + 1;
-      warnings.set(userId, newWarns);
+  await message.author.send(
+    `⚠️ You have been warned for using a prohibited word. Please use common sense.`
+  ).catch(() => {});
 
-      await message.author.send(
-        `You have been warned for using a prohibited word.`
-      ).catch(() => {});
+  await sendLog(client, {
+    title: '⚠️ Auto-Warn: Blacklisted Word',
+    color: 0xFEE75C,
+    fields: [
+      { name: 'User', value: message.author.tag },
+      { name: 'Word Triggered', value: matchedWord },
+      { name: 'Warnings', value: `${newWarns}` },
+      { name: 'Channel', value: message.channel.name }
+    ],
+    timestamp: new Date()
+  });
 
+  if (newWarns >= WARN_THRESHOLD) {
+    const member = await message.guild.members.fetch(userId).catch(() => null);
+    if (member) {
+      await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
       await sendLog(client, {
-        title: '⚠️ Auto-Warn: Blacklisted Word',
-        color: 0xFEE75C,
+        title: '⏱️ Auto-Timeout',
+        color: 0xED4245,
         fields: [
-          { name: 'User', value: message.author.tag },
-          { name: 'Word Triggered', value: word },
-          { name: 'Warnings', value: `${newWarns}` },
-          { name: 'Channel', value: message.channel.name }
+          { name: 'User', value: member.user.tag },
+          { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+          { name: 'Reason', value: 'Excessive infractions' }
         ],
         timestamp: new Date()
       });
-
-      if (newWarns >= WARN_THRESHOLD) {
-        const member = await message.guild.members.fetch(userId).catch(() => null);
-        if (member) {
-          await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
-          await sendLog(client, {
-            title: '⏱️ Auto-Timeout',
-            color: 0xED4245,
-            fields: [
-              { name: 'User', value: member.user.tag },
-              { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
-              { name: 'Reason', value: 'Excessive infractions' }
-            ],
-            timestamp: new Date()
-          });
-        }
-        warnings.set(userId, 0);
-      }
-      return;
     }
+    warnings.set(userId, 0);
   }
 });
 
