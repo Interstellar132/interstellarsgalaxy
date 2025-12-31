@@ -753,11 +753,11 @@ client.user.setPresence({
   checkForNewLevel();
   setInterval(checkForNewLevel, checkInterval);
 
-   checkYouTube(client);
+   // checkYouTube(client);
   checkTwitch(client);
   
    setInterval(() => {
-    checkYouTube(client).catch(console.error);
+   // checkYouTube(client).catch(console.error);
     checkTwitch(client).catch(console.error);
   }, 5 * 60 * 1000);
 });
