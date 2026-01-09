@@ -123,7 +123,7 @@ function buildEmbed(level) {
     .setTimestamp();
 }
 
-async function checkForNewLevel() {
+async function checkForNewLevel(client) {
   try {
     const stored = await getStoredLvlId();
     const level = await fetchLatestLevel();
