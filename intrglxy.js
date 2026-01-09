@@ -333,6 +333,7 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
 
   const userId = message.author.id;
+  const guildId = message.guild.id;
   const now = Date.now();
 
   /* ============================
@@ -342,13 +343,13 @@ client.on('messageCreate', async (message) => {
   const timestamps = userSpam.get(userId) || [];
   timestamps.push(now);
 
-  const recentMessages = timestamps.filter(ts => now - ts < SPAM_TIME_WINDOW);
+  const recentMessages = timestamps.filter(
+    ts => now - ts < SPAM_TIME_WINDOW
+  );
   userSpam.set(userId, recentMessages);
 
   if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
-    const currentWarns = warnings.get(userId) || 0;
-    const newWarns = currentWarns + 1;
-    warnings.set(userId, newWarns);
+    const newWarns = await warningStore.increment(guildId, userId);
 
     await message.channel.bulkDelete(recentMessages.length).catch(() => {});
     await message.author.send(
@@ -360,7 +361,10 @@ client.on('messageCreate', async (message) => {
       color: 0xFEE75C,
       fields: [
         { name: 'User', value: message.author.tag },
-        { name: 'Messages', value: `${recentMessages.length} in ${SPAM_TIME_WINDOW / 1000}s` },
+        {
+          name: 'Messages',
+          value: `${recentMessages.length} in ${SPAM_TIME_WINDOW / 1000}s`
+        },
         { name: 'Warnings', value: `${newWarns}` },
         { name: 'Channel', value: message.channel.name }
       ],
@@ -370,20 +374,27 @@ client.on('messageCreate', async (message) => {
     if (newWarns >= WARN_THRESHOLD) {
       const member = await message.guild.members.fetch(userId).catch(() => null);
       if (member) {
-        await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive spam').catch(() => {});
+        await member.timeout(
+          SPAM_TIMEOUT,
+          'Auto-Warn: Excessive spam'
+        ).catch(() => {});
+
         await sendLog(client, {
           title: '⏱️ Auto-Timeout: Spam',
           color: 0xED4245,
           fields: [
             { name: 'User', value: member.user.tag },
-            { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+            {
+              name: 'Duration',
+              value: `${SPAM_TIMEOUT / 60000} minutes`
+            },
             { name: 'Reason', value: 'Excessive spam' }
           ],
           timestamp: new Date()
         });
       }
 
-      warnings.set(userId, 0);
+      await warningStore.reset(guildId, userId);
       userSpam.set(userId, []);
     }
 
@@ -391,21 +402,18 @@ client.on('messageCreate', async (message) => {
   }
 
   /* ============================
-     2️⃣ BLACKLIST WORD CHECK (MongoDB)
+     2️⃣ BLACKLIST WORD CHECK
   ============================ */
 
-  // returns the base word that matched (e.g. "never"), or null
-  const matchedWord = await blacklist.matches(message.content, message.guild.id);
+  const matchedWord = blacklist.matches(message.content);
   if (!matchedWord) return;
 
   await message.delete().catch(() => {});
 
-  const currentWarns = warnings.get(userId) || 0;
-  const newWarns = currentWarns + 1;
-  warnings.set(userId, newWarns);
+  const newWarns = await warningStore.increment(guildId, userId);
 
   await message.author.send(
-    '⚠️ You have been warned for using a prohibited word.'
+    '⚠️ You have been warned for using a prohibited word. Please use common sense.'
   ).catch(() => {});
 
   await sendLog(client, {
@@ -423,20 +431,27 @@ client.on('messageCreate', async (message) => {
   if (newWarns >= WARN_THRESHOLD) {
     const member = await message.guild.members.fetch(userId).catch(() => null);
     if (member) {
-      await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
+      await member.timeout(
+        SPAM_TIMEOUT,
+        'Auto-Warn: Excessive infractions'
+      ).catch(() => {});
+
       await sendLog(client, {
         title: '⏱️ Auto-Timeout',
         color: 0xED4245,
         fields: [
           { name: 'User', value: member.user.tag },
-          { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+          {
+            name: 'Duration',
+            value: `${SPAM_TIMEOUT / 60000} minutes`
+          },
           { name: 'Reason', value: 'Excessive infractions' }
         ],
         timestamp: new Date()
       });
     }
 
-    warnings.set(userId, 0);
+    await warningStore.reset(guildId, userId);
   }
 });
 
