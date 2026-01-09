@@ -330,131 +330,127 @@ client.on('roleUpdate', async (oldRole, newRole) => {
 
 
 client.on('messageCreate', async (message) => {
-  if (message.author.bot || !message.guild) return;
+    if (message.author.bot || !message.guild) return;
 
-  const userId = message.author.id;
-  const guildId = message.guild.id;
-  const now = Date.now();
+    const userId = message.author.id;
+    const guildId = message.guild.id;
 
-  /* ============================
-     1️⃣ SPAM DETECTION
-  ============================ */
+    // ✅ Check for mod bypass
+    const member = await message.guild.members.fetch(userId).catch(() => null);
+    if (member?.permissions.has('MANAGE_MESSAGES')) return; // mods bypass
 
-  const timestamps = userSpam.get(userId) || [];
-  timestamps.push(now);
+    const now = Date.now();
 
-  const recentMessages = timestamps.filter(
-    ts => now - ts < SPAM_TIME_WINDOW
-  );
-  userSpam.set(userId, recentMessages);
+    /* ============================
+       1️⃣ SPAM DETECTION
+    ============================ */
+    const timestamps = userSpam.get(userId) || [];
+    timestamps.push(now);
+    const recentMessages = timestamps.filter(ts => now - ts < SPAM_TIME_WINDOW);
+    userSpam.set(userId, recentMessages);
 
-  if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
-    const newWarns = await warningStore.increment(guildId, userId);
+    if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
+        // Handle spam warning
+        let warning = await Warning.findOne({ userId, guildId });
+        if (!warning) warning = new Warning({ userId, guildId, count: 0 });
 
-    await message.channel.bulkDelete(recentMessages.length).catch(() => {});
-    await message.author.send(
-      '⚠️ You have been warned for spamming. Please slow down.'
-    ).catch(() => {});
+        warning.count += 1;
+        warning.lastUpdated = new Date();
+        await warning.save();
 
-    await sendLog(client, {
-      title: '⚠️ Auto-Warn: Spam',
-      color: 0xFEE75C,
-      fields: [
-        { name: 'User', value: message.author.tag },
-        {
-          name: 'Messages',
-          value: `${recentMessages.length} in ${SPAM_TIME_WINDOW / 1000}s`
-        },
-        { name: 'Warnings', value: `${newWarns}` },
-        { name: 'Channel', value: message.channel.name }
-      ],
-      timestamp: new Date()
-    });
-
-    if (newWarns >= WARN_THRESHOLD) {
-      const member = await message.guild.members.fetch(userId).catch(() => null);
-      if (member) {
-        await member.timeout(
-          SPAM_TIMEOUT,
-          'Auto-Warn: Excessive spam'
-        ).catch(() => {});
+        await message.channel.bulkDelete(recentMessages.length).catch(() => {});
+        await message.author.send(`⚠️ You have been warned for spamming.`).catch(() => {});
 
         await sendLog(client, {
-          title: '⏱️ Auto-Timeout: Spam',
-          color: 0xED4245,
-          fields: [
-            { name: 'User', value: member.user.tag },
-            {
-              name: 'Duration',
-              value: `${SPAM_TIMEOUT / 60000} minutes`
-            },
-            { name: 'Reason', value: 'Excessive spam' }
-          ],
-          timestamp: new Date()
+            title: '⚠️ Auto-Warn: Spam',
+            color: 0xFEE75C,
+            fields: [
+                { name: 'User', value: message.author.tag },
+                { name: 'Messages', value: `${recentMessages.length} in ${SPAM_TIME_WINDOW / 1000}s` },
+                { name: 'Warnings', value: `${warning.count}` },
+                { name: 'Channel', value: message.channel.name }
+            ],
+            timestamp: new Date()
         });
-      }
 
-      await warningStore.reset(guildId, userId);
-      userSpam.set(userId, []);
+        if (warning.count >= WARN_THRESHOLD) {
+            if (member) {
+                await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive spam').catch(() => {});
+                await sendLog(client, {
+                    title: '⏱️ Auto-Timeout: Spam',
+                    color: 0xED4245,
+                    fields: [
+                        { name: 'User', value: member.user.tag },
+                        { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+                        { name: 'Reason', value: 'Excessive spam' }
+                    ],
+                    timestamp: new Date()
+                });
+            }
+            warning.count = 0;
+            await warning.save();
+            userSpam.set(userId, []);
+        }
+        return;
     }
 
-    return;
-  }
+    /* ============================
+       2️⃣ BLACKLIST WORD CHECK
+    ============================ */
+    const blacklistItems = await Blacklist.find({ guildId });
+    if (!blacklistItems.length) return;
 
-  /* ============================
-     2️⃣ BLACKLIST WORD CHECK
-  ============================ */
+    for (const item of blacklistItems) {
+        // Convert stored regex string to RegExp object
+        const re = new RegExp(item.regex, 'i');
+        if (re.test(message.content)) {
+            // Found a match
+            await message.delete().catch(() => {});
 
-  const matchedWord = blacklist.matches(message.content);
-  if (!matchedWord) return;
+            // Handle warnings in DB
+            let warning = await Warning.findOne({ userId, guildId });
+            if (!warning) warning = new Warning({ userId, guildId, count: 0 });
 
-  await message.delete().catch(() => {});
+            warning.count += 1;
+            warning.lastUpdated = new Date();
+            await warning.save();
 
-  const newWarns = await warningStore.increment(guildId, userId);
+            await message.author.send(`⚠️ You have been warned for using a prohibited word.`)
+                .catch(() => {});
 
-  await message.author.send(
-    '⚠️ You have been warned for using a prohibited word. Please use common sense.'
-  ).catch(() => {});
+            await sendLog(client, {
+                title: '⚠️ Auto-Warn: Blacklisted Word',
+                color: 0xFEE75C,
+                fields: [
+                    { name: 'User', value: message.author.tag },
+                    { name: 'Word Triggered', value: item.word },
+                    { name: 'Warnings', value: `${warning.count}` },
+                    { name: 'Channel', value: message.channel.name }
+                ],
+                timestamp: new Date()
+            });
 
-  await sendLog(client, {
-    title: '⚠️ Auto-Warn: Blacklisted Word',
-    color: 0xFEE75C,
-    fields: [
-      { name: 'User', value: message.author.tag },
-      { name: 'Word Triggered', value: matchedWord },
-      { name: 'Warnings', value: `${newWarns}` },
-      { name: 'Channel', value: message.channel.name }
-    ],
-    timestamp: new Date()
-  });
-
-  if (newWarns >= WARN_THRESHOLD) {
-    const member = await message.guild.members.fetch(userId).catch(() => null);
-    if (member) {
-      await member.timeout(
-        SPAM_TIMEOUT,
-        'Auto-Warn: Excessive infractions'
-      ).catch(() => {});
-
-      await sendLog(client, {
-        title: '⏱️ Auto-Timeout',
-        color: 0xED4245,
-        fields: [
-          { name: 'User', value: member.user.tag },
-          {
-            name: 'Duration',
-            value: `${SPAM_TIMEOUT / 60000} minutes`
-          },
-          { name: 'Reason', value: 'Excessive infractions' }
-        ],
-        timestamp: new Date()
-      });
+            if (warning.count >= WARN_THRESHOLD) {
+                if (member) {
+                    await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
+                    await sendLog(client, {
+                        title: '⏱️ Auto-Timeout',
+                        color: 0xED4245,
+                        fields: [
+                            { name: 'User', value: member.user.tag },
+                            { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+                            { name: 'Reason', value: 'Excessive infractions' }
+                        ],
+                        timestamp: new Date()
+                    });
+                }
+                warning.count = 0;
+                await warning.save();
+            }
+            return; // stop checking further words
+        }
     }
-
-    await warningStore.reset(guildId, userId);
-  }
 });
-
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
