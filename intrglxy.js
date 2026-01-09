@@ -336,6 +336,7 @@ client.on('messageCreate', async (message) => {
   /* ============================
      1️⃣ SPAM DETECTION
   ============================ */
+
   const timestamps = userSpam.get(userId) || [];
   timestamps.push(now);
 
@@ -349,7 +350,7 @@ client.on('messageCreate', async (message) => {
 
     await message.channel.bulkDelete(recentMessages.length).catch(() => {});
     await message.author.send(
-      `⚠️ You have been warned for spamming. Please stop.`
+      '⚠️ You have been warned for spamming. Please slow down.'
     ).catch(() => {});
 
     await sendLog(client, {
@@ -383,13 +384,16 @@ client.on('messageCreate', async (message) => {
       warnings.set(userId, 0);
       userSpam.set(userId, []);
     }
+
     return;
   }
 
   /* ============================
-     2️⃣ BLACKLIST WORD CHECK
+     2️⃣ BLACKLIST WORD CHECK (MongoDB)
   ============================ */
-  const matchedWord = blacklist.matches(message.content); // returns the word that matched, or null
+
+  // returns the base word that matched (e.g. "never"), or null
+  const matchedWord = await blacklist.matches(message.content, message.guild.id);
   if (!matchedWord) return;
 
   await message.delete().catch(() => {});
@@ -399,7 +403,7 @@ client.on('messageCreate', async (message) => {
   warnings.set(userId, newWarns);
 
   await message.author.send(
-    `You have been warned for using a prohibited word. Please use common sense.`
+    '⚠️ You have been warned for using a prohibited word.'
   ).catch(() => {});
 
   await sendLog(client, {
@@ -429,9 +433,11 @@ client.on('messageCreate', async (message) => {
         timestamp: new Date()
       });
     }
+
     warnings.set(userId, 0);
   }
 });
+
 
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
