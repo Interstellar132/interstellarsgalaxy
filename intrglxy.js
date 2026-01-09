@@ -336,6 +336,13 @@ client.on('messageCreate', async (message) => {
   const guildId = message.guild.id;
   const now = Date.now();
 
+  const isMod = member.permissions.has([
+    PermissionFlagsBits.ModerateMembers,
+    PermissionFlagsBits.Administrator
+  ]);
+
+  if (isMod) return;
+  
   /* ============================
      1️⃣ SPAM DETECTION
   ============================ */
