@@ -337,7 +337,7 @@ client.on('messageCreate', async (message) => {
 
     // ✅ Check for mod bypass
     const member = await message.guild.members.fetch(userId).catch(() => null);
-    if (member?.permissions.has('MANAGE_MESSAGES')) return; // mods bypass
+    if (member?.permissions.has('Administrator')) return; // mods bypass
 
     const now = Date.now();
 
