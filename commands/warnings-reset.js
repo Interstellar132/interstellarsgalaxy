@@ -3,7 +3,7 @@ const warningStore = require('../utils/warnings');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('warnings reset')
+    .setName('warnings-reset')
     .setDescription('Reset warnings for a user')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addUserOption(opt =>
