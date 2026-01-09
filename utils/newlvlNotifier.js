@@ -1,5 +1,19 @@
 const LvlModel = require('./models/LvlModel'); // the schema file
 
+const difficulty = {
+  0: { img: "https://i.ibb.co/jkLM1mhn/na.png", color: "#969796" },
+  1: { img: "https://i.ibb.co/wZdCWjWk/auto.png", color: "#f6ca62" },
+  2: { img: "https://i.ibb.co/KzrmQ0SK/easy.png", color: "#01b9ff" },
+  3: { img: "https://i.ibb.co/wZv4nk7D/normal.png", color: "#00fc05" },
+  4: { img: "https://i.ibb.co/Y47JdkK7/hard.png", color: "#fed000" },
+  5: { img: "https://i.ibb.co/Y47JdkK7/hard.png", color: "#fed000" },
+  6: { img: "https://i.ibb.co/HDdtSByP/harder.png", color: "#fe5501" },
+  7: { img: "https://i.ibb.co/HDdtSByP/harder.png", color: "#fe5501" },
+  8: { img: "https://i.ibb.co/CpCvHq1D/insane.png", color: "#fe65df" },
+  9: { img: "https://i.ibb.co/CpCvHq1D/insane.png", color: "#fe65df" },
+  10:{ img: "https://i.ibb.co/rGmc0CvW/demon.png", color: "#ff3444" },
+};
+
 // Get stored level ID
 async function getStoredLvlId() {
   const doc = await LvlModel.findById('lastLvl');
