@@ -2,6 +2,8 @@ const fs = require('fs');
 const https = require('https');
 const { Client, GatewayIntentBits, EmbedBuilder, Collection, ActivityType, AuditLogEvent, Partials } = require('discord.js');
 const { REST, Routes } = require('discord.js');
+require("dotenv").config();
+const connectDB = require("./database");
 
 // ================= CLIENT =================
 const client = new Client({
@@ -735,7 +737,6 @@ client.on('guildMemberRemove', async member => {
 });
 
 
-
 // ================= READY =================
 client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -767,4 +768,12 @@ if (!token) {
   process.exit(1);
 }
 
-client.login(token);
+(async () => {
+  try {
+    await connectDB();
+    await client.login(token);
+  } catch (err) {
+    console.error("I have died,", err);
+    process.exit(1);
+  }
+})();
