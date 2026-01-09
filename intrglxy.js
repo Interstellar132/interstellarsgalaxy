@@ -639,7 +639,7 @@ client.user.setPresence({
     ]
   })
   
-  checkForNewLevel();
+  checkForNewLevel(client);
   setInterval(checkForNewLevel, checkInterval);
 
    // checkYouTube(client);
