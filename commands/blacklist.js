@@ -50,7 +50,7 @@ module.exports = {
         });
       }
 
-      await blacklist.add(guildId, word);
+      await blacklist.add(interaction.guild.id, word, interaction.user.id);
 
       return interaction.reply({
         content: `✅ **${word}** has been added to the blacklist.`,
@@ -62,7 +62,7 @@ module.exports = {
     if (sub === 'remove') {
       const word = interaction.options.getString('word').toLowerCase();
 
-      const removed = await blacklist.remove(guildId, word);
+      const removed = await blacklist.remove(interaction.guild.id, word);
       if (!removed) {
         return interaction.reply({
           content: '❌ That word is not blacklisted.',
@@ -78,7 +78,7 @@ module.exports = {
 
     /* ===== LIST ===== */
     if (sub === 'list') {
-      const words = await blacklist.list(guildId);
+      const words = await blacklist.list(interaction.guild.id);;
 
       if (!words.length) {
         return interaction.reply({
