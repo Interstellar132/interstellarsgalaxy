@@ -397,7 +397,7 @@ client.on('messageCreate', async (message) => {
     /* ============================
        2️⃣ BLACKLIST WORD CHECK
     ============================ */
-    const blacklistItems = await Blacklist.find({ guildId });
+    const blacklistItems = await blacklist.find({ guildId });
     if (!blacklistItems.length) return;
 
     for (const item of blacklistItems) {
