@@ -53,7 +53,8 @@ module.exports = {
       await blacklist.add(guildId, word);
 
       return interaction.reply({
-        content: `✅ **${word}** has been added to the blacklist.`
+        content: `✅ **${word}** has been added to the blacklist.`,
+        ephemeral: true
       });
     }
 
@@ -64,13 +65,14 @@ module.exports = {
       const removed = await blacklist.remove(guildId, word);
       if (!removed) {
         return interaction.reply({
-          content: '❌ That word is not in the blacklist.',
+          content: '❌ That word is not blacklisted.',
           ephemeral: true
         });
       }
 
       return interaction.reply({
-        content: `🗑️ **${word}** has been removed from the blacklist.`
+        content: `🗑️ **${word}** is no longer blacklisted.`,
+        ephemeral: true
       });
     }
 
@@ -88,7 +90,8 @@ module.exports = {
       return interaction.reply({
         content:
           `🚫 **Blacklisted Words:**\n` +
-          words.map(w => `• ${w.word}`).join('\n')
+          words.map(w => `• ${w.word}`).join('\n'),
+          ephemeral: true
       });
     }
   }
