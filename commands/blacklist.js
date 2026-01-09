@@ -1,98 +1,80 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const blacklist = require('../utils/wordBlacklist');
+const { SlashCommandBuilder } = require('discord.js');
+const Blacklist = require('../models/Blacklist');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('blacklist')
     .setDescription('Manage blacklisted words')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-
-    .addSubcommand(sub =>
-      sub
+    
+    // Add a word
+    .addSubcommand(subcommand =>
+      subcommand
         .setName('add')
         .setDescription('Add a word to the blacklist')
-        .addStringOption(opt =>
-          opt.setName('word')
+        .addStringOption(option =>
+          option.setName('word')
             .setDescription('The word to blacklist')
             .setRequired(true)
         )
     )
-
-    .addSubcommand(sub =>
-      sub
+    // Remove a word
+    .addSubcommand(subcommand =>
+      subcommand
         .setName('remove')
         .setDescription('Remove a word from the blacklist')
-        .addStringOption(opt =>
-          opt.setName('word')
-            .setDescription('The word to remove')
+        .addStringOption(option =>
+          option.setName('word')
+            .setDescription('The word to remove from the blacklist')
             .setRequired(true)
         )
     )
-
-    .addSubcommand(sub =>
-      sub
-        .setName('list')
-        .setDescription('List all blacklisted words')
+    // View all blacklisted words
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('view')
+        .setDescription('View all blacklisted words for this server')
     ),
 
   async execute(interaction) {
     const guildId = interaction.guild.id;
-    const sub = interaction.options.getSubcommand();
+    const subcommand = interaction.options.getSubcommand();
 
-    /* ===== ADD ===== */
-    if (sub === 'add') {
-      const word = interaction.options.getString('word').toLowerCase();
+    try {
+      if (subcommand === 'add') {
+        const word = interaction.options.getString('word').toLowerCase();
 
-      if (await blacklist.exists(guildId, word)) {
-        return interaction.reply({
-          content: '❌ That word is already blacklisted.',
-          ephemeral: true
-        });
+        const existing = await Blacklist.findOne({ guildId, word });
+        if (existing) {
+          return interaction.reply({ content: `❌ "${word}" is already blacklisted.`, ephemeral: true });
+        }
+
+        const newEntry = new Blacklist({ guildId, word });
+        await newEntry.save();
+        return interaction.reply({ content: `✅ Blacklisted the word: "${word}"`, ephemeral: true });
+
+      } else if (subcommand === 'remove') {
+        const word = interaction.options.getString('word').toLowerCase();
+
+        const deleted = await Blacklist.findOneAndDelete({ guildId, word });
+        if (!deleted) {
+          return interaction.reply({ content: `❌ "${word}" was not found in the blacklist.`, ephemeral: true });
+        }
+
+        return interaction.reply({ content: `✅ Removed "${word}" from the blacklist.`, ephemeral: true });
+
+      } else if (subcommand === 'view') {
+        const words = await Blacklist.find({ guildId }).sort({ word: 1 });
+        if (!words.length) {
+          return interaction.reply({ content: '⚠️ No blacklisted words for this server.', ephemeral: true });
+        }
+
+        const wordList = words.map(entry => entry.word).join(', ');
+        return interaction.reply({ content: `🛑 Blacklisted words:\n${wordList}`, ephemeral: true });
       }
 
-      await blacklist.add(interaction.guild.id, word, interaction.user.id);
-
-      return interaction.reply({
-        content: `✅ **${word}** has been added to the blacklist.`,
-        ephemeral: true
-      });
-    }
-
-    /* ===== REMOVE ===== */
-    if (sub === 'remove') {
-      const word = interaction.options.getString('word').toLowerCase();
-
-      const removed = await blacklist.remove(interaction.guild.id, word);
-      if (!removed) {
-        return interaction.reply({
-          content: '❌ That word is not blacklisted.',
-          ephemeral: true
-        });
-      }
-
-      return interaction.reply({
-        content: `🗑️ **${word}** is no longer blacklisted.`,
-        ephemeral: true
-      });
-    }
-
-    /* ===== LIST ===== */
-    if (sub === 'list') {
-      const words = await blacklist.list(interaction.guild.id);;
-
-      if (!words.length) {
-        return interaction.reply({
-          content: '📭 No blacklisted words.',
-          ephemeral: true
-        });
-      }
-
-      return interaction.reply({
-        content:
-          `🚫 **Blacklisted Words:**\n` +
-          words.map(w => `• ${w.word}`).join('\n'),
-          ephemeral: true
-      });
+    } catch (err) {
+      console.error('Blacklist command error:', err);
+      return interaction.reply({ content: '⚠️ An error occurred while processing this command.', ephemeral: true });
     }
   }
 };
