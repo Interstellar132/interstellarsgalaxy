@@ -43,6 +43,7 @@ const { checkTwitch } = require('./utils/twitchNotifier');
 const blacklist = require('./utils/wordBlacklist');
 const { checkForNewLevel } = require('./utils/newlvlNotifier');
 const Blacklist = require('./models/Blacklist');
+const Warning = require('./models/Warning');
 
 const recentJoins = [];
 
