@@ -95,6 +95,7 @@ function fetchLatestLevel() {
   });
 }
 
+
 // ================= EMBED =================
 function buildEmbed(level) {
   const diff = difficulty[level.starsReq] ?? difficulty[0];
@@ -117,3 +118,27 @@ function buildEmbed(level) {
     })
     .setTimestamp();
 }
+
+async function checkForNewLevel() {
+  try {
+    const stored = await getStoredLvlId();
+    const level = await fetchLatestLevel();
+
+    if (level.lvlid > stored) {
+      const channel = await client.channels.fetch(newlvlschnl);
+
+      await channel.send(`${lvlsping} New Interstellar Level!`);
+      await channel.send({ embeds: [buildEmbed(level)] });
+
+      await saveLvlId(level.lvlid);
+
+      console.log(`🆕 New level: ${level.lvlid}`);
+    } else {
+      console.log('No new level.');
+    }
+  } catch (err) {
+    console.error('Check failed:', err);
+  }
+}
+
+module.exports = { checkForNewLevel };
