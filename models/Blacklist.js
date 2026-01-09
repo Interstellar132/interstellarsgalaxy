@@ -1,29 +1,11 @@
-const { Schema, model } = require('mongoose');
+const mongoose = require('mongoose');
 
-const blacklistSchema = new Schema({
-  guildId: {
-    type: String,
-    required: true,
-    index: true
-  },
-  word: {
-    type: String,
-    required: true
-  },
-  regex: {
-    type: String,
-    required: true
-  },
-  addedBy: {
-    type: String,
-    required: true
-  },
-  addedAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+const BlacklistSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  word: { type: String, required: true },
+  regex: { type: String, required: true },
+  addedBy: { type: String, required: true },
+}, { timestamps: true });
 
-blacklistSchema.index({ guildId: 1, word: 1 }, { unique: true });
+module.exports = mongoose.model('Blacklist', BlacklistSchema);
 
-module.exports = model('Blacklist', blacklistSchema);
