@@ -4,6 +4,8 @@ const { Client, GatewayIntentBits, EmbedBuilder, Collection, ActivityType, Audit
 const { REST, Routes } = require('discord.js');
 require("dotenv").config();
 const connectDB = require("./database");
+const warningStore = require('./utils/warnings');
+
 
 // ================= CLIENT =================
 const client = new Client({
