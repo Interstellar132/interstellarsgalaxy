@@ -42,6 +42,7 @@ const { checkYouTube } = require('./utils/youtubeNotifier');
 const { checkTwitch } = require('./utils/twitchNotifier');
 const blacklist = require('./utils/wordBlacklist');
 const { checkForNewLevel } = require('./utils/newlvlNotifier');
+const Blacklist = require('./models/Blacklist');
 
 const recentJoins = [];
 
@@ -397,7 +398,7 @@ client.on('messageCreate', async (message) => {
     /* ============================
        2️⃣ BLACKLIST WORD CHECK
     ============================ */
-    const blacklistItems = await blacklist.find({ guildId });
+    const blacklistItems = await Blacklist.find({ guildId: message.guild.id });
     if (!blacklistItems.length) return;
 
     for (const item of blacklistItems) {
