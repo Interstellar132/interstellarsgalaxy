@@ -1,5 +1,6 @@
 const LvlModel = require('./models/LvlModel');
 const newlvlschnl = ('1443065773034836068');
+const lvlsping = (`<@&1443069487417917512>`);
 
 const difficulty = {
   0: { img: "https://i.ibb.co/jkLM1mhn/na.png", color: "#969796" },
