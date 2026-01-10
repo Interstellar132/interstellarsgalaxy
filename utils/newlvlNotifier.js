@@ -34,7 +34,7 @@ async function saveLvlId(id) {
 }
 
 function decodeDescription(encoded) {
-  if (!encoded) return 'No description';
+  if (!encoded) return 'No description provided';
   try {
     return Buffer.from(encoded, 'base64').toString('utf8');
   } catch {
