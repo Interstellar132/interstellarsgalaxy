@@ -106,7 +106,7 @@ function buildEmbed(level) {
 
   return new EmbedBuilder()
     .setAuthor({ name: "New Level!" })
-    .setTitle(level.lvlname || 'Untitled Level')
+    .setTitle(level.lvlname || 'Unnamed Level')
     .setURL(`https://gdbrowser.com/${level.lvlid}`)
     .setDescription(decodeDescription(level.lvlencDesc))
     .addFields(
