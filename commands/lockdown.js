@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const backupFile = path.join(__dirname, '..', 'lockdown-backup.json');
+const LockdownBackup = require('../models/LockdownBackup');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,16 +15,31 @@ module.exports = {
     const backup = {};
 
     for (const ch of channels.values()) {
-      // Save current SendMessages permission for @everyone
-      const everyonePerm = ch.permissionOverwrites.cache.get(interaction.guild.roles.everyone.id);
-      backup[ch.id] = everyonePerm ? everyonePerm.allow.has(0x00000800) : null; // SEND_MESSAGES bit
+      const everyonePerm = ch.permissionOverwrites.cache.get(
+        interaction.guild.roles.everyone.id
+      );
 
-      // Lock channel
-      await ch.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false }).catch(() => {});
+      let canSend = null;
+
+      if (everyonePerm) {
+        canSend = everyonePerm.allow.has(PermissionsBitField.Flags.SendMessages);
+      }
+
+      backup[ch.id] = canSend;
+
+      await ch.permissionOverwrites.edit(
+        interaction.guild.roles.everyone,
+        { SendMessages: false }
+      ).catch(() => {});
     }
 
-    fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
+    // Save to MongoDB (upsert = replace if already exists)
+    await LockdownBackup.findOneAndUpdate(
+      { guildId: interaction.guild.id },
+      { channels: backup },
+      { upsert: true, new: true }
+    );
 
-    await interaction.reply({ content: 'Server locked down and state saved.', ephemeral: true });
+    await interaction.reply({ content: '🔒 Server locked down and state saved to database.', ephemeral: true });
   }
 };
