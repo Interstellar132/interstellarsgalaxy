@@ -644,7 +644,7 @@ client.user.setPresence({
   checkTwitch(client);
   
    setInterval(() => {
-   // checkYouTube(client).catch(console.error);
+    checkYouTube(client).catch(console.error);
     checkTwitch(client).catch(console.error);
   }, 5 * 60 * 1000);
 });
