@@ -640,7 +640,7 @@ client.user.setPresence({
   checkForNewLevel(client);
   setInterval(checkForNewLevel, checkInterval);
 
-   // checkYouTube(client);
+  checkYouTube(client);
   checkTwitch(client);
   
    setInterval(() => {
