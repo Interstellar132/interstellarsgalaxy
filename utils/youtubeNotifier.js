@@ -1,16 +1,5 @@
-const fs = require('fs');
 const { EmbedBuilder } = require('discord.js');
-
-const STATE_FILE = './youtube-state.json';
-
-function loadState() {
-  if (!fs.existsSync(STATE_FILE)) return {};
-  return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-}
-
-function saveState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-}
+const YouTubeState = require('../models/YouTubeState');
 
 function extract(tag, xml) {
   const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
@@ -31,53 +20,66 @@ function cleanHtml(text) {
 }
 
 async function checkYouTube(client) {
-  const channelId = process.env.YOUTUBE_CHANNEL_ID;
-  const announceChannelId = process.env.CONTENT_ANNOUNCE_CHANNEL_ID;
+  try {
+    const channelId = process.env.YOUTUBE_CHANNEL_ID;
+    const announceChannelId = process.env.CONTENT_ANNOUNCE_CHANNEL_ID;
 
-  if (!channelId || !announceChannelId) return;
+    if (!channelId || !announceChannelId) return;
 
-  const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-  const res = await fetch(feedUrl);
-  const xml = await res.text();
+    const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    const res = await fetch(feedUrl);
+    const xml = await res.text();
 
-  const entry = extractEntry(xml);
-  if (!entry) return;
+    const entry = extractEntry(xml);
+    if (!entry) return;
 
-  const videoId = extract('yt:videoId', entry);
-  if (!videoId) return;
+    const videoId = extract('yt:videoId', entry);
+    if (!videoId) return;
 
-  const state = loadState();
-  if (state.lastVideoId === videoId) return;
+    // Load state from MongoDB
+    let state = await YouTubeState.findOne({ channelId });
 
-  state.lastVideoId = videoId;
-  saveState(state);
+    if (!state) {
+      state = await YouTubeState.create({ channelId, lastVideoId: videoId });
+      return; // first run → do not announce old video
+    }
 
-  const title = cleanHtml(extract('title', entry)) || 'New YouTube Video';
-  const description = cleanHtml(extract('media:description', entry) || '');
-  const published = extract('published', entry);
+    if (state.lastVideoId === videoId) return; // already announced
 
-  const channel = await client.channels.fetch(announceChannelId).catch(() => null);
-  if (!channel) return;
+    // Update state BEFORE sending
+    state.lastVideoId = videoId;
+    await state.save();
 
-  const embed = new EmbedBuilder()
-    .setColor(0xFF0000)
-    .setTitle(title) // ✅ ACTUAL VIDEO TITLE
-    .setURL(`https://youtu.be/${videoId}`)
-    .setAuthor({
-      name: 'New YouTube Upload',
-      iconURL: 'https://i.ibb.co/ZzH647jv/youtube-icon-logo-symbol-free-png.webp'
-    })
-    .setThumbnail(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`)
-    .setDescription(
-      description.length > 1024
-        ? description.slice(0, 1021) + '...'
-        : description || '*No description provided*'
-    )
-    .setTimestamp(published ? new Date(published) : new Date())
-    .setFooter({ text: 'YouTube' });
+    const title = cleanHtml(extract('title', entry)) || 'New YouTube Video';
+    const description = cleanHtml(extract('media:description', entry) || '');
+    const published = extract('published', entry);
 
-  await channel.send(`<@&1114778023951081584> Interstellar uploaded a new video!`);
-  await channel.send({ embeds: [embed] });
+    const channel = await client.channels.fetch(announceChannelId).catch(() => null);
+    if (!channel) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(0xFF0000)
+      .setTitle(title)
+      .setURL(`https://youtu.be/${videoId}`)
+      .setAuthor({
+        name: 'New YouTube Upload',
+        iconURL: 'https://i.ibb.co/ZzH647jv/youtube-icon-logo-symbol-free-png.webp'
+      })
+      .setThumbnail(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`)
+      .setDescription(
+        description.length > 1024
+          ? description.slice(0, 1021) + '...'
+          : description || '*No description provided*'
+      )
+      .setTimestamp(published ? new Date(published) : new Date())
+      .setFooter({ text: 'YouTube' });
+
+    await channel.send(`<@&1114778023951081584> Interstellar uploaded a new video!`);
+    await channel.send({ embeds: [embed] });
+
+  } catch (err) {
+    console.error('YouTube notifier error:', err);
+  }
 }
 
 module.exports = { checkYouTube };
