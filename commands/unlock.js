@@ -14,7 +14,7 @@ module.exports = {
     const backup = await LockdownBackup.findOne({ guildId: interaction.guild.id });
 
     if (!backup) {
-      return interaction.reply({ content: 'No backup found. Cannot unlock.', ephemeral: true });
+      return interaction.reply({ content: 'No backup found. Cannot unlock. (uh oh!)', ephemeral: true });
     }
 
     const channels = interaction.guild.channels.cache.filter(ch => ch.isTextBased());
@@ -46,6 +46,6 @@ module.exports = {
     // Delete backup after restoring
     await LockdownBackup.deleteOne({ guildId: interaction.guild.id });
 
-    await interaction.reply({ content: '🔓 Server unlocked and original state restored from database.', ephemeral: true });
+    await interaction.reply({ content: '🔓 Server unlocked.', ephemeral: true });
   }
 };
