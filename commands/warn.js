@@ -52,7 +52,7 @@ module.exports = {
     });
 
     await interaction.reply({
-      content: `✅ Warned ${user.tag})`,
+      content: `✅ Warned ${user.tag}`,
       ephemeral: true
     });
   }
