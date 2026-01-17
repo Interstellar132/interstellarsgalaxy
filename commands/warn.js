@@ -23,19 +23,19 @@ module.exports = {
     const user = interaction.options.getUser('user');
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
-    // Upsert + increment warning count
+    // Upsert + increment warning count, store username too
     const warningDoc = await Warning.findOneAndUpdate(
       { guildId: interaction.guild.id, userId: user.id },
       {
         $inc: { count: 1 },
-        $set: { lastUpdated: new Date() }
+        $set: { lastUpdated: new Date(), username: user.tag }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     // DM the user
     await user.send(
-      `⚠️ You have been warned for: ${reason}\n`
+      `⚠️ You have been warned for ${reason}\n`
     ).catch(() => null);
 
     // Log warning
@@ -44,6 +44,7 @@ module.exports = {
       color: 0xED4245,
       fields: [
         { name: 'User', value: user.tag },
+        { name: 'Username', value: user.username, inline: true },
         { name: 'Total Warnings', value: String(warningDoc.count), inline: true },
         { name: 'Reason', value: reason },
         { name: 'Moderator', value: interaction.user.tag }
@@ -57,4 +58,3 @@ module.exports = {
     });
   }
 };
-
