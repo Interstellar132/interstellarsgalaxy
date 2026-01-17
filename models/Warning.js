@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const WarningSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   userId: { type: String, required: true },
+  username: { type: String, required: true },
   count: { type: Number, default: 0 },
   lastUpdated: { type: Date, default: Date.now }
 });
