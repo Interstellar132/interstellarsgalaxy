@@ -21,7 +21,7 @@ const client = new Client({
 
 // ================= CONFIG =================
 const saveFile = './lastLevel.json';
-const checkInterval = 60 * 1000;
+const checkInterval = 5 * 60 * 1000;
 
 const token = process.env.DISCORD_TOKEN;
 const guildId = process.env.guildID;
