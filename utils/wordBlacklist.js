@@ -10,7 +10,7 @@ function wordToRegex(word) {
     t: '[t7]',
     l: '[l1|]',
     b: '[b8]',
-    g: '[g9]',
+    g: '[g96]',
     v: '[v]',
     r: '[r4]'
   };
