@@ -309,9 +309,9 @@ client.on('roleUpdate', async (oldRole, newRole) => {
     fields.push({ name: 'Permissions Changed', value: permDiff.join('\n') });
   }
 
-  if (!fields.length) return; // No relevant changes
+  if (!fields.length) return; 
 
-  // Fetch executor from audit logs
+
   let executor;
   try {
     const logs = await newRole.guild.fetchAuditLogs({ type: 32, limit: 1 }); // ROLE_UPDATE
@@ -343,22 +343,18 @@ client.on('messageCreate', async (message) => {
 
     const now = Date.now();
 
-    /* ============================
-       1️⃣ SPAM DETECTION
-    ============================ */
     const timestamps = userSpam.get(userId) || [];
     timestamps.push(now);
     const recentMessages = timestamps.filter(ts => now - ts < SPAM_TIME_WINDOW);
     userSpam.set(userId, recentMessages);
 
     if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
-        // Handle spam warning
-        let warning = await Warning.findOne({ userId, guildId });
-        if (!warning) warning = new Warning({ userId, guildId, count: 0 });
-
-        warning.count += 1;
-        warning.lastUpdated = new Date();
-        await warning.save();
+        // Upsert warning with username
+        const warning = await Warning.findOneAndUpdate(
+            { userId, guildId },
+            { $inc: { count: 1 }, $set: { lastUpdated: new Date(), username: message.author.tag } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
         await message.channel.bulkDelete(recentMessages.length).catch(() => {});
         await message.author.send(`⚠️ You have been warned for spamming.`).catch(() => {});
@@ -389,6 +385,7 @@ client.on('messageCreate', async (message) => {
                     timestamp: new Date()
                 });
             }
+
             warning.count = 0;
             await warning.save();
             userSpam.set(userId, []);
@@ -396,61 +393,56 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    /* ============================
-       2️⃣ BLACKLIST WORD CHECK
-    ============================ */
-    const blacklistItems = await Blacklist.find({ guildId: message.guild.id });
+    const blacklistItems = await Blacklist.find({ guildId });
     if (!blacklistItems.length) return;
 
     for (const item of blacklistItems) {
-        // Convert stored regex string to RegExp object
         const re = new RegExp(item.regex, 'i');
-        if (re.test(message.content)) {
-            // Found a match
-            await message.delete().catch(() => {});
+        if (!re.test(message.content)) continue;
 
-            // Handle warnings in DB
-            let warning = await Warning.findOne({ userId, guildId });
-            if (!warning) warning = new Warning({ userId, guildId, count: 0 });
+        // Found a match
+        await message.delete().catch(() => {});
 
-            warning.count += 1;
-            warning.lastUpdated = new Date();
-            await warning.save();
+        const warning = await Warning.findOneAndUpdate(
+            { userId, guildId },
+            { $inc: { count: 1 }, $set: { lastUpdated: new Date(), username: message.author.tag } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
-            await message.author.send(`⚠️ You have been warned for using a prohibited word.`)
-                .catch(() => {});
+        await message.author.send(`⚠️ You have been warned for using a prohibited word.`).catch(() => {});
 
-            await sendLog(client, {
-                title: '⚠️ Auto-Warn: Blacklisted Word',
-                color: 0xFEE75C,
-                fields: [
-                    { name: 'User', value: message.author.tag },
-                    { name: 'Word Triggered', value: item.word },
-                    { name: 'Warnings', value: `${warning.count}` },
-                    { name: 'Channel', value: message.channel.name }
-                ],
-                timestamp: new Date()
-            });
+        await sendLog(client, {
+            title: '⚠️ Auto-Warn: Blacklisted Word',
+            color: 0xFEE75C,
+            fields: [
+                { name: 'User', value: message.author.tag },
+                { name: 'Username', value: message.author.username },
+                { name: 'Word Triggered', value: item.word },
+                { name: 'Warnings', value: `${warning.count}` },
+                { name: 'Channel', value: message.channel.name }
+            ],
+            timestamp: new Date()
+        });
 
-            if (warning.count >= WARN_THRESHOLD) {
-                if (member) {
-                    await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
-                    await sendLog(client, {
-                        title: '⏱️ Auto-Timeout',
-                        color: 0xED4245,
-                        fields: [
-                            { name: 'User', value: member.user.tag },
-                            { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
-                            { name: 'Reason', value: 'Excessive infractions' }
-                        ],
-                        timestamp: new Date()
-                    });
-                }
-                warning.count = 0;
-                await warning.save();
+        if (warning.count >= WARN_THRESHOLD) {
+            if (member) {
+                await member.timeout(SPAM_TIMEOUT, 'Auto-Warn: Excessive infractions').catch(() => {});
+                await sendLog(client, {
+                    title: '⏱️ Auto-Timeout',
+                    color: 0xED4245,
+                    fields: [
+                        { name: 'User', value: member.user.tag },
+                        { name: 'Duration', value: `${SPAM_TIMEOUT / 60000} minutes` },
+                        { name: 'Reason', value: 'Excessive infractions' }
+                    ],
+                    timestamp: new Date()
+                });
             }
-            return; // stop checking further words
+
+            warning.count = 0;
+            await warning.save();
         }
+        return;
     }
 });
 
