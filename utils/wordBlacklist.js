@@ -12,7 +12,8 @@ function wordToRegex(word) {
     b: '[b8]',
     g: '[g96]',
     v: '[v]',
-    r: '[r4]'
+    r: '[r4]',
+    q: '[q6]'
   };
 
   const pattern = word
