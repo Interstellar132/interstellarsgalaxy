@@ -1,6 +1,5 @@
 const fs = require('fs');
 const { REST, Routes } = require('discord.js');
-require('dotenv').config();
 
 const clientId = process.env.clientID;      // Your bot's application ID
 const guildId = process.env.guildID;        // Optional: use for testing in one server
