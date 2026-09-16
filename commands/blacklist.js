@@ -4,27 +4,27 @@ const Blacklist = require('../models/Blacklist');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('blacklist')
-    .setDescription('Manage the word blacklist')
+    .setDescription('Prohibited terms management')
     .addSubcommand(subcommand =>
       subcommand
         .setName('add')
-        .setDescription('Add a word to the blacklist')
+        .setDescription('Adds to the list of prohibited terms')
         .addStringOption(option => 
           option.setName('word')
-                .setDescription('Word to blacklist')
+                .setDescription('Word to add')
                 .setRequired(true)))
     .addSubcommand(subcommand =>
       subcommand
         .setName('remove')
-        .setDescription('Remove a word from the blacklist')
+        .setDescription('Kills a prohibited term')
         .addStringOption(option => 
           option.setName('word')
-                .setDescription('Word to remove from blacklist')
+                .setDescription('Word to kill')
                 .setRequired(true)))
     .addSubcommand(subcommand =>
       subcommand
         .setName('view')
-        .setDescription('View all blacklisted words in this server')),
+        .setDescription('View all prohibited terms in this server')),
 
   async execute(interaction) {
     const guildId = interaction.guild.id;
@@ -36,9 +36,9 @@ module.exports = {
 
         const exists = await Blacklist.findOne({ guildId, word });
         if (exists)
-          return interaction.reply({ content: `❌ "${word}" is already blacklisted.`, ephemeral: true });
+          return interaction.reply({ content: `"${word}" is already prohibited.`, ephemeral: true });
 
-        // Escape regex characters and add word boundaries
+        
         const regexStr = `\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
 
         const newEntry = new Blacklist({
@@ -49,7 +49,7 @@ module.exports = {
         });
 
         await newEntry.save();
-        return interaction.reply({ content: `✅ Blacklisted the word: "${word}"`, ephemeral: true });
+        return interaction.reply({ content: `"${word}" as been added to prohibited terms.`, ephemeral: true });
       }
 
       if (subcommand === 'remove') {
@@ -57,23 +57,23 @@ module.exports = {
 
         const deleted = await Blacklist.findOneAndDelete({ guildId, word });
         if (!deleted)
-          return interaction.reply({ content: `❌ "${word}" was not found in the blacklist.`, ephemeral: true });
+          return interaction.reply({ content: `"${word}" is currently not prohibited.`, ephemeral: true });
 
-        return interaction.reply({ content: `✅ Removed "${word}" from the blacklist.`, ephemeral: true });
+        return interaction.reply({ content: `"${word}" Has been removed from prohibited terms.`, ephemeral: true });
       }
 
       if (subcommand === 'view') {
         const words = await Blacklist.find({ guildId });
         if (!words.length)
-          return interaction.reply({ content: `⚠️ No words are currently blacklisted.`, ephemeral: true });
+          return interaction.reply({ content: `You don't have any prohibited terms. Do /blacklist add {word}.`, ephemeral: true });
 
         const list = words.map(entry => `• ${entry.word}`).join('\n');
-        return interaction.reply({ content: `📜 Blacklisted words:\n${list}`, ephemeral: true });
+        return interaction.reply({ content: `# __Prohibited Terms__ \n${list}`, ephemeral: true });
       }
 
     } catch (err) {
       console.error('Blacklist command error:', err);
-      return interaction.reply({ content: '❌ An error occurred while managing the blacklist.', ephemeral: true });
+      return interaction.reply({ content: 'An error occurred while managing prohibited terms.', ephemeral: true });
     }
   },
 };
