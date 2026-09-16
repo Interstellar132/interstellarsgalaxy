@@ -1,4 +1,3 @@
-require('dotenv').config(); // remove on GitHub
 const LvlModel = require('../models/lvlModel');
 const newlvlschnl = ('1443065773034836068');
 const lvlsping = (`<@&1443069487417917512>`);
