@@ -235,7 +235,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (newMessage.partial) newMessage = await newMessage.fetch().catch(() => null);
     if (!oldMessage || !newMessage) return;
     if (oldMessage.author?.bot) return;
-    if (oldMessage.content === newMessage.content) return; // ignore embed-only changes
+    if (oldMessage.content === newMessage.content) return; 
 
     await sendLog(client, {
       title: '✏️ Message Edited',
