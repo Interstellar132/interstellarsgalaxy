@@ -6,7 +6,7 @@ const connectDB = require("./database");
 const warningStore = require('./utils/warnings');
 
 
-// ================= CLIENT =================
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -19,7 +19,7 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// ================= CONFIG =================
+
 const saveFile = './lastLevel.json';
 const checkInterval = 5 * 60 * 1000;
 
@@ -53,13 +53,13 @@ const { sendLog } = require('./utils/logger.js');
 const { diffRole } = require('./utils/permDiff.js');
 
 
-/* ─────────────── CHANNEL UPDATE ─────────────── */
+
 
 client.on('channelUpdate', async (oldChannel, newChannel) => {
   const logChannel = newChannel.guild.channels.cache.get(process.env.logID);
   if (!logChannel || !logChannel.isTextBased()) return;
 
-  // 1️⃣ Channel property diffs
+
   const channelDiffs = diff(oldChannel, newChannel, [
     'name',
     'topic',
@@ -94,7 +94,7 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
     await logChannel.send({ embeds: [embed] });
   }
 
-  // 2️⃣ Permission overwrite diffs
+
   const permChanges = diffOverwrites(
     oldChannel.permissionOverwrites.cache,
     newChannel.permissionOverwrites.cache
@@ -151,13 +151,13 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
   }
 });
 
-/* ─────────────── MEMBER UPDATE ─────────────── */
+
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
   const logChannel = newMember.guild.channels.cache.get(process.env.logID);
   if (!logChannel || !logChannel.isTextBased()) return;
 
-  // 1️⃣ Nickname changes
+
   if (oldMember.nickname !== newMember.nickname) {
     const embed = new EmbedBuilder()
       .setTitle('📝 Nickname Changed')
@@ -172,7 +172,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     await logChannel.send({ embeds: [embed] });
   }
 
-  // 2️⃣ Role changes
+
   const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
   const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
 
@@ -201,14 +201,14 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
   }
 });
 
-/* ─────────────── MEMBER REMOVE (KICK/BAN) ─────────────── */
+
 
 client.on('guildMemberRemove', async (member) => {
   const logChannel = member.guild.channels.cache.get(process.env.logID);
   if (!logChannel || !logChannel.isTextBased()) return;
 
   try {
-    // Check audit log for kick
+
     const logs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberKick });
     const entry = logs.entries.first();
 
@@ -257,10 +257,10 @@ client.on('messageDelete', async (message) => {
   try {
     if (message.partial) {
       message = await message.fetch().catch(() => null);
-      if (!message) return; // Could not fetch, skip
+      if (!message) return; 
     }
-    if (!message.content) return; // No content to log
-    if (message.author?.bot) return; // Ignore bot messages
+    if (!message.content) return; 
+    if (message.author?.bot) return; 
 
     await sendLog(client, {
       title: '🗑️ Message Deleted',
@@ -283,27 +283,27 @@ client.on('roleUpdate', async (oldRole, newRole) => {
 
   const fields = [];
 
-  // Name
+
   if (oldRole.name !== newRole.name) {
     fields.push({ name: 'Name Changed', value: `Before: ${oldRole.name}\nAfter: ${newRole.name}` });
   }
 
-  // Color
+
   if (oldRole.color !== newRole.color) {
     fields.push({ name: 'Color Changed', value: `Before: #${oldRole.color.toString(16).padStart(6, '0')}\nAfter: #${newRole.color.toString(16).padStart(6, '0')}` });
   }
 
-  // Hoist
+
   if (oldRole.hoist !== newRole.hoist) {
     fields.push({ name: 'Hoist Changed', value: `Before: ${oldRole.hoist}\nAfter: ${newRole.hoist}` });
   }
 
-  // Mentionable
+
   if (oldRole.mentionable !== newRole.mentionable) {
     fields.push({ name: 'Mentionable Changed', value: `Before: ${oldRole.mentionable}\nAfter: ${newRole.mentionable}` });
   }
 
-  // Permissions
+
   const permDiff = diffRole(oldRole.permissions, newRole.permissions);
   if (permDiff.length) {
     fields.push({ name: 'Permissions Changed', value: permDiff.join('\n') });
@@ -314,7 +314,7 @@ client.on('roleUpdate', async (oldRole, newRole) => {
 
   let executor;
   try {
-    const logs = await newRole.guild.fetchAuditLogs({ type: 32, limit: 1 }); // ROLE_UPDATE
+    const logs = await newRole.guild.fetchAuditLogs({ type: 32, limit: 1 }); 
     executor = logs.entries.first()?.executor;
   } catch {}
 
@@ -337,9 +337,9 @@ client.on('messageCreate', async (message) => {
     const userId = message.author.id;
     const guildId = message.guild.id;
 
-    // ✅ Check for mod bypass
+
     const member = await message.guild.members.fetch(userId).catch(() => null);
-    if (member?.permissions.has('Administrator')) return; // mods bypass
+    if (member?.permissions.has('Administrator')) return; 
 
     const now = Date.now();
 
@@ -349,7 +349,7 @@ client.on('messageCreate', async (message) => {
     userSpam.set(userId, recentMessages);
 
     if (recentMessages.length >= SPAM_MESSAGE_THRESHOLD) {
-        // Upsert warning with username
+
         const warning = await Warning.findOneAndUpdate(
             { userId, guildId },
             { $inc: { count: 1 }, $set: { lastUpdated: new Date(), username: message.author.tag } },
@@ -400,7 +400,7 @@ client.on('messageCreate', async (message) => {
         const re = new RegExp(item.regex, 'i');
         if (!re.test(message.content)) continue;
 
-        // Found a match
+
         await message.delete().catch(() => {});
 
         const warning = await Warning.findOneAndUpdate(
@@ -449,7 +449,7 @@ client.on('messageCreate', async (message) => {
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-// Load commands
+
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   if (command.data && typeof command.data.toJSON === 'function') {
@@ -459,14 +459,14 @@ for (const file of commandFiles) {
   }
 }
 
-// Deploy commands
+
 (async () => {
   const rest = new REST({ version: '10' }).setToken(token);
 
   try {
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-    // Use this for guild (testing) commands
+   
     if (guildId) {
       await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
@@ -474,7 +474,7 @@ for (const file of commandFiles) {
       );
       console.log(`Successfully reloaded commands for guild ${guildId}.`);
     } else {
-      // Use this for global commands
+
       await rest.put(
         Routes.applicationCommands(clientId),
         { body: commands }
@@ -486,17 +486,17 @@ for (const file of commandFiles) {
   }
 })();
 
-// Create a collection for commands
+
 client.commands = new Collection();
 
-// Load commands from the commands folder
+
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.data.name, command);
 }
 
 
-// Interaction handler
+
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -517,7 +517,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// channel & server stuff
+
 const newlvlschnl = ('1443065773034836068');
 const lvlsping = (`<@&1443069487417917512>`);
 const liveping = (`<@&894609836434653214>`);
@@ -533,17 +533,17 @@ client.on('guildMemberAdd', async member => {
 
   const now = Date.now();
 
-  // ===== Store join =====
+
   recentJoins.push({ time: now, member });
 
   const windowMs = JOIN_WINDOW_SECONDS * 1000;
 
-  // Remove old joins
+
   while (recentJoins.length && recentJoins[0].time < now - windowMs) {
     recentJoins.shift();
   }
 
-  // ===== Check raid =====
+
   if (recentJoins.length >= JOIN_THRESHOLD) {
     await dmOwner(
       member.client,
@@ -556,7 +556,7 @@ Auto-banning suspicious accounts...`
     for (const entry of recentJoins) {
       const m = entry.member;
 
-      // Skip if already gone
+
       if (!m || !m.bannable) continue;
 
       const ageMs = now - m.user.createdAt.getTime();
@@ -580,16 +580,16 @@ Account Age: ${ageDays} day(s)`
       }
     }
 
-    // Reset to avoid repeated bans
+
     recentJoins.length = 0;
   }
 
-  // ===== Normal traffic log =====
+
   await channel.send(
     `<@${member.id}> left Earth and joined us in space! Welcome Aboard!`
   );
 
-  // ===== New account warning (DM only) =====
+
   const ageMs = now - member.user.createdAt.getTime();
   const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
 
@@ -615,7 +615,7 @@ client.on('guildMemberRemove', async member => {
 });
 
 
-// ================= READY =================
+
 client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
 
