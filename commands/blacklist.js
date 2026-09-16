@@ -17,10 +17,10 @@ module.exports = {
     .addSubcommand(subcommand =>
       subcommand
         .setName('remove')
-        .setDescription('Kills a prohibited term')
+        .setDescription('Removes a prohibited term')
         .addStringOption(option => 
           option.setName('word')
-                .setDescription('Word to kill')
+                .setDescription('Word to remove')
                 .setRequired(true)))
     .addSubcommand(subcommand =>
       subcommand
