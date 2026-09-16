@@ -9,7 +9,7 @@ module.exports = {
     .addSubcommand(subcommand =>
       subcommand
         .setName('add')
-        .setDescription('Adds a prohibited terms')
+        .setDescription('Adds a prohibited term')
         .addStringOption(option => 
           option.setName('word')
                 .setDescription('Word to add')
