@@ -1,0 +1,57 @@
+v1.0.0
+Added new levels tracker
+Release
+
+
+v1.1.0
+Added announce slash command
+Fixed bot presence
+
+
+v1.2.0
+Added traffic messages for member join/leave
+Added raid prevention
+Added suspicious member notification
+Added moderator commands ‘kick’, ‘ban’, ‘lockdown’, ‘unlock’
+
+
+v1.3.0
+Added ‘warn’ command
+Added server logging
+Added spam prevention
+Added blocklists
+
+
+v1.4.0
+Added youtube upload and stream notifications
+Allowed regular staff to use /announce
+
+
+v1.5.0
+Migrated saves from .json to a database
+Added invite slash command
+Added warnings view slash command
+Added warnings reset slash command
+Migrated blacklisted words to database
+Migrated level IDs to database
+Migrated Warnings to database
+
+
+v1.5.1
+Migrated lockdown backup to database
+Fixed YouTube notifications
+Fixed warning slash command not storing warnings to database
+
+
+v1.5.2
+Removed warn decay
+Fixed automod not storing warns to database
+Added usernames to database log
+Increased time for bot to ping GD servers from 1 minute to 5 minutes
+
+
+v1.5.3
+Rephrased responses
+Removed lockdown command
+Removed unlock command
+Fixed an issue where anyone had access to moderator-level commands
