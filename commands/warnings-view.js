@@ -1,10 +1,11 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const warningStore = require('../utils/warnings');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('warnings')
     .setDescription('View warnings')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addSubcommand(sub =>
       sub
         .setName('view')
