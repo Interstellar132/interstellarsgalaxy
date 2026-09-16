@@ -27,21 +27,21 @@ module.exports = {
     }
 
     try {
-      // Send the announcement
+
       await channel.send(message);
 
-      // Confirm to the admin
+      
       await interaction.reply({
         content: 'Announcement sent.',
         ephemeral: true
       });
 
-      // Send DM to you (bot owner)
+
       const owner = await interaction.client.users.fetch(OWNER_ID);
 
       await owner.send({
         content:
-`📢 **Announcement Used**
+`buddy used announcement :D
 👤 User: ${interaction.user.tag} (${interaction.user.id})
 🏠 Server: ${interaction.guild.name} (${interaction.guild.id})
 📝 Message:
