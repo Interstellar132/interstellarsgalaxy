@@ -1,3 +1,4 @@
+require('dotenv').config(); // remove on GitHub
 const LvlModel = require('../models/lvlModel');
 const newlvlschnl = ('1443065773034836068');
 const lvlsping = (`<@&1443069487417917512>`);
@@ -18,13 +19,13 @@ const difficulty = {
   10:{ img: "https://i.ibb.co/rGmc0CvW/demon.png", color: "#ff3444" },
 };
 
-// Get stored level ID
+
 async function getStoredLvlId() {
   const doc = await LvlModel.findById('lastLvl');
   return doc ? doc.lastLvlId : 0;
 }
 
-// Save level ID
+
 async function saveLvlId(id) {
   await LvlModel.findByIdAndUpdate(
     'lastLvl',
@@ -34,7 +35,7 @@ async function saveLvlId(id) {
 }
 
 function decodeDescription(encoded) {
-  if (!encoded) return 'No description provided';
+  if (!encoded) return '*No description provided*';
   try {
     return Buffer.from(encoded, 'base64').toString('utf8');
   } catch {
@@ -46,10 +47,10 @@ function getLengthName(num) {
   return ['Tiny', 'Short', 'Medium', 'Long', 'XL', 'Platformer'][num] ?? 'N/A';
 }
 
-// ================= FETCH =================
-const USER_TO_SCAN = '21143982';
-const USER_ID = '21143982';
-const ACCOUNT_ID = '6066142';
+
+const USER_TO_SCAN = process.env.GD_USER_ID;
+const USER_ID = process.env.GD_USER_ID;
+const ACCOUNT_ID = process.env.GD_ACCOUNT_ID;
 
 function fetchLatestLevel() {
   const postData = new URLSearchParams({
@@ -99,14 +100,12 @@ function fetchLatestLevel() {
   });
 }
 
-
-// ================= EMBED =================
 function buildEmbed(level) {
   const diff = difficulty[level.starsReq] ?? difficulty[0];
 
   return new EmbedBuilder()
     .setAuthor({ name: "New Level!" })
-    .setTitle(level.lvlname || 'Unnamed Level')
+    .setTitle(level.lvlname)
     .setURL(`https://gdbrowser.com/${level.lvlid}`)
     .setDescription(decodeDescription(level.lvlencDesc))
     .addFields(
@@ -131,12 +130,12 @@ async function checkForNewLevel(client) {
     if (level.lvlid > stored) {
       const channel = await client.channels.fetch(newlvlschnl);
 
-      await channel.send(`${lvlsping} New Interstellar Level!`);
+      await channel.send(`${lvlsping} Interstellar uploaded a new level!`);
       await channel.send({ embeds: [buildEmbed(level)] });
 
       await saveLvlId(level.lvlid);
 
-      console.log(`🆕 New level: ${level.lvlid}`);
+      console.log(`buddy finally uploaded a new level: ${level.lvlid}`);
     } else {
       console.log('No new level.');
     }
