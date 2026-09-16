@@ -9,11 +9,11 @@ module.exports = {
     const user = interaction.user;
 
     try {
-      await user.send('Here\'s the server invite: https://discord.gg/ry6zwuQe8z');
-      await interaction.reply({ content: 'I have DM\'d you an invite to the server.', ephemeral: true });
+     // await user.send('Here\'s the server invite: https://discord.gg/ry6zwuQe8z');
+      await interaction.reply({ content: 'Server invites are currently disabled.', ephemeral: true });
     } catch (err) {
-      // User likely has DMs off
-      await interaction.reply({ content: 'I couldn\'t send you an invite likely due to your dms being off. Please enable dms and retry the command.', ephemeral: true });
+      
+    //  await interaction.reply({ content: 'I couldn\'t send you an invite likely due to your dms being off. Please enable dms and retry the command.', ephemeral: true });
     }
   }
 };
