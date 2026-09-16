@@ -9,7 +9,7 @@ module.exports = {
         .setDescription('The announcement message')
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(interaction) {
     const message = interaction.options.getString('message');
