@@ -27,6 +27,7 @@ module.exports = {
         .setName('view')
         .setDescription('View all prohibited terms in this server')),
 
+        
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const subcommand = interaction.options.getSubcommand();
@@ -37,7 +38,7 @@ module.exports = {
 
         const exists = await Blacklist.findOne({ guildId, word });
         if (exists)
-          return interaction.reply({ content: `"${word}" is already prohibited.`, ephemeral: true });
+          return interaction.reply({ content: `**${word}** is already prohibited.`, ephemeral: true });
 
         
         const regexStr = `\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
@@ -50,7 +51,7 @@ module.exports = {
         });
 
         await newEntry.save();
-        return interaction.reply({ content: `"${word}" as been added to prohibited terms.`, ephemeral: true });
+        return interaction.reply({ content: `**${word}** has been added.`, ephemeral: true });
       }
 
       if (subcommand === 'remove') {
@@ -58,9 +59,9 @@ module.exports = {
 
         const deleted = await Blacklist.findOneAndDelete({ guildId, word });
         if (!deleted)
-          return interaction.reply({ content: `"${word}" is currently not prohibited.`, ephemeral: true });
+          return interaction.reply({ content: `**${word}** is not on the list.`, ephemeral: true });
 
-        return interaction.reply({ content: `"${word}" Has been removed from prohibited terms.`, ephemeral: true });
+        return interaction.reply({ content: `**${word}** has been removed.`, ephemeral: true });
       }
 
       if (subcommand === 'view') {
