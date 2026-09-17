@@ -55,3 +55,8 @@ Rephrased responses
 Removed lockdown command
 Removed unlock command
 Fixed an issue where anyone had access to moderator-level commands
+
+
+v1.5.4
+Fixed typos
+Added admin command 'managefacts'
